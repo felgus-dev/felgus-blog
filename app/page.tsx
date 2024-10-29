@@ -1,13 +1,13 @@
-import { BlogPosts } from 'app/components/posts'
+import { BlogPosts } from "app/components/posts";
 
 export default function Page() {
   return (
     <section>
       <h1 className="mb-8 text-2xl font-semibold tracking-tighter">
-      Felgus' blog
+        Felipe Gustavo's blog
       </h1>
       <p className="mb-4">
-      {`Hey, I’m Felipe, a React enthusiast and frontend engineer, 
+        {`Hey, I’m Felipe, a React enthusiast and frontend engineer, 
       specialized in building high-quality user interfaces and frontend web 
       applications. With great interest in javascript ecosystem, state management libraries, 
       fine-grained reactivity, tech products solutions and API design, 
@@ -17,5 +17,5 @@ export default function Page() {
         <BlogPosts />
       </div>
     </section>
-  )
+  );
 }

@@ -1,0 +1,118 @@
+---
+title: "The complicated relation between React and derivations"
+publishedAt: "2024-10-29"
+summary: ""
+---
+
+React hooks was released 6 years ago, but until today, we can see errors being committed, even by senior react engineers. In the newest version of React docs, the core team put a strong effort in teaching the wrong use cases of useEffect, but errors continue happening in real projects.
+
+In this post, let’s try a different approach. Let's understand React relation with derivation and why you should use more of it.
+
+## Reactivity
+
+React is not [fully reactive](https://legacy.reactjs.org/docs/design-principles.html#scheduling), but in the end, to the developer creating apps, it doesn’t matter so much. The point of difference here is that the coarse-grained approach React follows creates the necessity of re-renders to really identify what changes the state transition created.
+
+So, think in a simple React component like this one:
+
+```JSX
+function Example() {
+  const [count, setCount] = useState(0)
+  const text = `count is ${count}`;
+
+  return (
+    <button onClick={() => setCount((count) => count + 1)}>
+      {text}
+    </button>
+  );
+}
+```
+
+When we change the count state, calling `setCount`, we update the state value and schedule a re-render. All right, React will re-render this component calling it again. At this moment, if I ask React what changed on the render, what should be the answer?
+
+Probably a humble **“I don’t know”**.
+
+React doesn’t track its state with a complex data structure managing its dependencies like other [fine-grained reactive libraries do](https://www.solidjs.com/guides/reactivity). React needs to call the component again. In this new call, the `count` constant created will have the new value, and above it we will create a new constant with the string, for example **“count is 1”**, if `count` value changed to 1.
+
+Then the JSX will generate its structure with one change, the button inner text is not **“count is 1”**, React does the reconciliation process, identifies this change and applies it to the real DOM. Obvious, right?
+
+At this moment, if I ask React what changed, it will probably answer: **“The button text from Example component”**.
+
+But wait, what about the text constant? It changed as well, why does it just matter the **v-dom** (I know the problems with this term, but it's how it is commonly called) structure it created?
+
+For React, it doesn’t matter the variables and constants you created internally. What matters is the state changes and then, the return of the component call.
+
+Everything in the middle is part of the process of creating the view structure. Of course, all this data can affect the return JSX, and that is the point of the React model, caring about the result of the component calls and updating the DOM accordingly with the view.
+
+You probably saw the simplification of React model as:
+
+```JAVASCRIPT
+view= f(state)
+```
+
+View as the result of function of state. View in this case is a derivation that changes based on state. So, for this term and for the internal component data, **React is a derivation machine**.
+
+## Derivation Machine
+
+Every variable and constants you created inside a component will just be alive during that component call. In the example we used above, every re-render of `Example` components created a new constant `text`. If I need to have a new value based on some props or state, it will just create a new variable using those states and props in the calculation.
+
+### React creates derivations automatically, by default.
+
+Let’s take an example from [React docs](https://react.dev/learn/you-might-not-need-an-effect#updating-state-based-on-props-or-state):
+
+```JSX
+function Form() {
+  const [firstName, setFirstName] = useState('Taylor');
+  const [lastName, setLastName] = useState('Swift');
+
+  // 🔴 Avoid: redundant state and unnecessary Effect
+  const [fullName, setFullName] = useState('');
+  useEffect(() => {
+    setFullName(firstName + ' ' + lastName);
+  }, [firstName, lastName]);
+
+  //...
+  return <span>{fullName}</span>;
+}
+```
+
+We have some issues here. First of all, the nature of a state.
+
+Why do we need a local state like this in an app? To keep the data and allow the user to change it. The `fullName` state is not being changed by the user, but by the `useEffect`. It’s using other states to create a new value. Again, in React, every variable and constant we create internally in the component can use the states and props to calculate its value: **a derivation, the default behavior of React**.
+
+There is another problem with this example, about runtime. In this case, in the first render, the `fullName` value will be an empty string. React will get the return of the JSX of this component, render it to the UI, follow the browser painting process and after it, call the `useEffects` of the components. At this moment we will have the `setfullName` call, which will schedule a new re-render. React will call the component again, now with the `fullName` as _Taylor Swift_ and then, update the UI with the new text value.
+
+In terms of runtime, you are doing 2 renders, one of them an unnecessary one, with wrong data. It’s worse in terms of performance and stability, because the user will see the value as empty and it can be seen as a visual bug.
+
+So, following the React derivation model, we can simply change it to:
+
+```JSX
+function FormRight() {
+  const [firstName, setFirstName] = useState('Taylor');
+  const [lastName, setLastName] = useState('Swift');
+
+  const fullName = firstName + ' ' + lastName;
+  //...
+  return <span>{fullName}</span>
+}
+```
+
+Now we have just 1 render, avoiding the unnecessary one. And we will avoid the use of the effect just using a derivation. That will be updated on every re-render using the latest version of the state values.
+
+### But if the calculation is too expensive? Or if I have too many states and want to update the fullName just when firstName or lastName changes?
+
+Right, in this case just use `useMemo`, adding the same array of dependencies you were using on `useEffect`. The memoization model of React is just a way to avoid the default behavior, that is to create a new derivation on every re-render. With `useMemo`, you track manually the states and props and just create the derivation again if some of them have changed.
+
+### What about useEffect?
+
+`useEffect` is necessary for external sync on values changes. On UI development, there are very few rare cases where this makes sense, because normally the external changes, such as server API calls, happen on user actions (we are creating **User Interfaces**, by the way), so these will happen on event handlers, not in a `useEffect`.
+
+If you are using `useEffect` to update a state, probably you can do the same update using derivation, avoiding all the problems mentioned before.
+
+If derivation doesn‘t work, or you have one of the few specific cases, or something is wrong with the state's design or with the solution itself. There is no problem with it, but in these cases, it’s better to review the component and avoid future problems with the component code.
+
+This is the basics about derivation in React, but we have something missing here.
+
+What happens when I need to do a derivation that is asynchronous, like a simple GET request, that uses some state as param and needs to be recalculated every time the state changes?
+
+This is a topic for the next post.  
+See you!
