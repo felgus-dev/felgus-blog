@@ -1,0 +1,89 @@
+---
+title: "Async derivations in React"
+publishedAt: "2024-11-04"
+summary: "Until React 19, it did not a primitive way of solving async derivations, now it's solved."
+---
+
+We have a problem, [async is hard](https://dev.to/this-is-learning/async-derivations-in-reactivity-ec5).
+
+Imagine you have a simple GET API, a search that receives as param a `searchText`. You call it using your http request tool of preference and get a promise, it resolves to the list of whatever you are searching for.
+
+_How can I call it in a React component?_
+
+First of all, it’s important to notice one thing, what I described can be modeled as:
+
+```javascript
+result = await searchAPI(searchText);
+```
+
+Let’s get conceptual here. **This is a derivation**. For each version of `searchText`, you can get a different result. But there are some problems here:
+
+- it 's external data.
+- it returns a promise.
+
+_How can I call it as a derivation in React?_
+
+Using third-party libraries, such as [TanStack Query](https://tanstack.com/query/v3) and [SWR](https://swr.vercel.app/pt-BR) solves our problem. They give us hooks that we can use in a React component, receiving our states and props and recalculating (refetching) to the API when it changes. Look this example:
+
+```JSX
+const { data: searchResult, loading } = useQuery({queryKey: [search, searchText],queryFn: getSearch,});
+```
+
+_Ok, we solved async derivation, right?_
+
+Not really.
+
+By the way, I always recommend just using one of these libraries, they are awesome and save a ton of time with more complex cases (such as refetching, retry, cache control and etc), but we cannot count on a third-party to solve a conceptual problem of React.
+
+Coming again to reactivity, we need to have a way of dealing with asynchronous cases in a derivation model. React should give us a primitive for this case. Well, until version 18 we didn’t have it, but [in 19 it’s different.](https://19.react.dev/reference/react/use)
+
+## The ‘use’ case
+
+React 19 introduces a new primitive called `use`. Yes, the naming is a little confusing, but its role on the reactivity model of React is pretty important. With it, we can solve promises during the render of a component. **The missing derivation.**
+
+Before it, the only way of calling a fetch during the render of a component was to use `useEffect`, call the `promise` and on the `then` clause, set a state with the value that comes as response. That worked, sort of, but we had [all the problems of using an effect to do it](https://www.felgus.dev/blog/react-relation-to-derivation#derivation-machine).
+The `use` primitive allows us to resolve the promise during the render of the component, allowing for us to use the state and props to create the promise, and then, resolving these promises and using it on our functions and JSX.
+
+```JSX
+const useCountTotal = (count: number) => {
+  const countTotalPromise = useMemo(() => genericPromise(count), [count]);
+
+  const result = use(countTotalPromise);
+
+  return result;
+}
+
+function AsyncDerivation({count}: { count: number}) {
+  const result = useCountTotal(count);
+
+  return (
+    <div>Total count is: {result}</div>
+  )
+}
+```
+
+At the moment I’m writing this, we don’t yet have the final release of React 19. There are some caveats and probably the primitive will evolve in the future to work in more places.
+
+One specific thing of the primitive `use` is that it needs to be used with `Suspense` and there is a very good reason for this.
+
+## Async and React components
+
+The conceptual idea of `await` is nice, but it has a flaw when joined with React components. You cannot just use `await` during the render. React calls a component to get the JSX response and use it on their flow to render a UI.
+
+If we could just stop everything in a `await`, React could not access the children of that component and continue its work until the end of the tree. We’d stop the render flow and make the UI not be updated and freeze.
+
+_How to solve that?_
+
+We can look at the two examples I used in this article. The first one takes the approach of returning flags such as `loading`, not blocking the render flow. When the promise is resolved, it throws a re-render, updating the flags, the `loading` turns false and `data` receives the response data.
+
+The `use` approach is different. It really behaves like the `await` primitive, so the component render flow is stopped there, until the resolution.
+
+_Wait, wait, wait, you said it was a problem, right?_
+
+And here it comes `Suspense` for salvation. When you use the `use` primitive, it’ll be wrapped in a `Suspense` component, the render flow will stop waiting for the use resolution, and the user gets the `fallback` rendered on the UI (normally a loading spinner or skeleton, something to indicate we are loading some stuff there).
+
+When the use promise is resolved, we continue the render and update the UI accordingly. No need to use `useEffect`.
+
+## Conclusion
+
+The use primitive will be very useful for library authors aiming to use `Suspense` and work with asynchronous behavior. For the app developer, it fixes one more case in the basic reactivity model, that will fit great in simple use cases. As it wraps promises, it is not restricted just to http requests, but for all async cases and external API usage, which can add more resources to the ecosystem.
