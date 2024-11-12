@@ -1,0 +1,144 @@
+---
+title: "Lifecycle doesn't exist in React with hooks"
+publishedAt: "2024-11-11"
+summary: "About common mistakes and misconceptions"
+---
+
+A long long long time ago, we used React with classes, remember?
+
+At that time, we had the concept of lifecycle methods, methods on the classes that accepted callbacks that would be executed in certain moments. The big three: on mount, on update and on unmount.
+
+## Old, but gold classes
+
+That was important, on the classes components the returned JSX was made on render method, the state attached to the this of the component, and the app developer needed a way to know to do actions in certain moments. We had the idea of the time on the life of a component:
+
+- `componentDidMount` is the moment the component renders for the first time and adds elements to the DOM and is the moment to start connection and side effects such as API requests.
+- `shouldComponentUpdate` allows you to manually set your logic to compare the next props and state and return a boolean to define if the re-render could be skipped or not.
+- `componentDidUpdate` is the moment the state or props changed, calling render method again and doing the reconciliation changes to identity difference and apply to the DOM, good to sync state with new props and do logic stuff.
+- `componentWillUnmount` is when React would remove the elements from the DOM and was a good place to clean things and avoid memory leaks.
+
+And of course, you had an important API such as `forceUpdate`, that allowed you to manually trigger a **re-render** if you are using external data that would not connect with React state updates.
+
+At a conceptual level, we have a more direct way of conducting the flow of the app. The lifecycle methods followed a similar life cycle of a DOM element, you could do `memo` and `forceUpdates` by yourself, syncing state was the default way of doing logic.
+
+This directness was seen as simplicity, and to learn these concepts was easier compared with the reactive model. But then, hooks arrived and changed everything.
+
+## The unnamed reactivity
+
+The transition was confusing. First, in a search to make it easy, and sort of, maintain the conceptual vision of React model that devs had, a lot of communications tried to show the similarities on the hooks model. To have the 3 main life cycles methods, they showed workarounds with `useEffect`.
+
+```JSX
+
+// componentDidMount
+ useEffect(() => {
+    // code...
+
+    // componentWillUnmount:
+    return function cleanup() {
+      // code...
+    };
+  }, []);
+
+// componentDidUpdate
+ useEffect(() => {
+    // code...
+
+  }, [dependencyState, dependencyProp]);
+```
+
+So, most of the new React code made with hooks followed this idea, and starting to sync state was a natural process. In order to keep the same idea of lifecycle methods, it was the place to call setState and trigger the re-render process.
+
+_What is the problem with it?_
+
+Syncing state became a problem, the wrong usage of `useEffect` became a problem, double re-renders became a problem, too much re-renders became a problem, performance became a problem.
+
+It’s a little bit confusing this step from React, at least for me. Because, the move to hooks was a move to a reactive model, even if it’s a coarse-grained one. But the communication was that nothing really big changed. No content about the reactivity concepts and theory, even working for years with React, I just started to really understand reactivity reading [Ryan Carniato’s blog](https://dev.to/ryansolid) posts about reactivity and [solid](https://dev.to/ryansolid).
+
+Even knowing that `useEffect` had a misuse, I really didn’t understand why, and this lack of conceptual theory about reactivity makes committing mistakes with hooks so easy. `useEffect` became the most hated hook, being called **“useFootgun”** for some people. The point is, there is a conceptual confusion in React that expresses itself as all the issues with `useEffect` we see today.
+
+**useEffect issues are not the cause of the problem, but the consequence.**
+
+## What about life cycle with hooks
+
+So, this is the thing. There is no life cycle in the concept of reactivity.
+
+You have a change, you react to it deriving and doing side effects. Effects are the consequence, not the cause. There is no state sync and no concepts of mount and unmount.
+
+It should not matter if it is the first, the 10th or the last render before unmount, and the hooks don’t care for it, by the way, even `useEffect`.
+
+Try it:
+
+```JSX
+function EffectExample() {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    console.log('effect', count);
+
+    return () => {
+      console.log('clean up', count);
+    }
+  }, [count]);
+
+  return (
+    <button onClick={() => setCount((state) => state + 1)}>
+      {count}
+    </button>
+  )
+}
+```
+
+You will see on your `console` both functions being executed on each state update. First the clean up one, and then the effect callback. If you are using `useEffect` with some state or prop to do a subscription, every time the dependencies changes, the clean up function will be called, and then the new callback, doing the subscription again, but with the new values.
+
+You should look your app code as the React model simplified:
+
+```JAVASCRIPT
+UI = fn(state)
+```
+
+If you have a component like this one:
+
+```JSX
+function Example() {
+  const [count, setCount] = useState(0);
+
+  return (
+    <button onClick={() => setCount((state) => state + 1)}>
+      {count}
+    </button>
+  )
+}
+```
+
+what you really have, when you click on the button and adds +1 to the count, **conceptually**, is something like this:
+
+```JSX
+// first render
+<button>0</button> = fn({ count: 0 });
+// button click - re-render
+<button>1</button> = fn({ count: 1 });
+// button click - re-render
+<button>2</button> = fn({ count: 2 });
+// button click - re-render
+<button>3</button> = fn({ count: 3 });
+```
+
+Each click calls again the fn, with a new state, generating a new version of UI. The state should change by the action of the user or by an async value that should be made with [async derivations](https://www.felgus.dev/blog/async-derivations).
+
+This way you keep the clean idea:
+
+- state transitions make a new fn call
+- with the new state, you get the UI description
+- if it’s different, update the screen.
+
+## A clean and consistent model.
+
+it’s a matter of the renderer to care with adding, updating and removing elements from the screen. At the component level, what matters is:
+
+- if the state changed
+- if the app can handle the user actions
+- the returned structure in the JSX.
+
+Hooks and its reactive model make React decouple itself from the browser, making the app code care less about in which moment of screen rendering process you are. You don’t force updates and even handle memos by your own rules anymore, it's less direct for the app dev, but more direct in terms of model.
+
+**Each re-render generates a structure, React takes care of the rest.**
