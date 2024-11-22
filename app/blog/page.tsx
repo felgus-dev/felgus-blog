@@ -1,4 +1,5 @@
 import { BlogPosts } from "app/components/posts";
+import { getBlogPosts } from 'app/blog/utils';
 
 export const metadata = {
   title: "Blog",
@@ -6,12 +7,14 @@ export const metadata = {
 };
 
 export default function Page() {
+  const allPosts = getBlogPosts();
+
   return (
     <section>
       <h1 className="font-semibold text-2xl mb-8 tracking-tighter">
-        Felipe Gustavo's blog all posts
+        All blog posts
       </h1>
-      <BlogPosts />
+      <BlogPosts posts={allPosts} />
     </section>
   );
 }

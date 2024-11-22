@@ -1,20 +1,10 @@
 import Link from 'next/link'
-import { formatDate, getBlogPosts } from 'app/blog/utils'
+import { formatDate, Post } from 'app/blog/utils'
 
-export function BlogPosts() {
-  let allBlogs = getBlogPosts()
-
+export function BlogPosts({posts}: {posts: Post[]}) {
   return (
     <div>
-      {allBlogs
-        .sort((a, b) => {
-          if (
-            new Date(a.metadata.publishedAt) > new Date(b.metadata.publishedAt)
-          ) {
-            return -1
-          }
-          return 1
-        })
+      {posts
         .map((post) => (
           <Link
             key={post.slug}

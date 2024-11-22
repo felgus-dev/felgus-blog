@@ -6,6 +6,15 @@ type Metadata = {
   publishedAt: string
   summary: string
   image?: string
+  categories?: string
+  serie?: string
+}
+
+export type Post = {
+  metadata: Metadata;
+  slug: string;
+  content: string;
+  categories: string[];
 }
 
 function parseFrontmatter(fileContent: string) {
@@ -40,17 +49,47 @@ function getMDXData(dir) {
   return mdxFiles.map((file) => {
     let { metadata, content } = readMDXFile(path.join(dir, file))
     let slug = path.basename(file, path.extname(file))
+    let categories = metadata?.categories?.split(',') || [];
 
     return {
       metadata,
       slug,
       content,
+      categories
     }
   })
 }
 
+function sortPosts(listOfPosts: Post[]) {
+  return listOfPosts.sort((a, b) => {
+    if (
+      new Date(a.metadata.publishedAt) > new Date(b.metadata.publishedAt)
+    ) {
+      return -1
+    }
+    return 1
+  });
+}
+
 export function getBlogPosts() {
-  return getMDXData(path.join(process.cwd(), 'app', 'blog', 'posts'))
+  const allPosts =  getMDXData(path.join(process.cwd(), 'app', 'blog', 'posts'));
+  return sortPosts(allPosts)
+}
+
+export function getBlogPostsPerCategory(category: string) {
+  const allPosts = getMDXData(path.join(process.cwd(), 'app', 'blog', 'posts'));
+
+  const categoryPosts = allPosts.filter(post => post.categories.includes(category));
+
+  return sortPosts(categoryPosts);
+}
+
+export function getBlogPostsOfASerie(serie: string) {
+  const allPosts = getMDXData(path.join(process.cwd(), 'app', 'blog', 'posts'));
+
+  const seriePosts = allPosts.filter(post => post.metadata?.serie === serie);
+
+  return sortPosts(seriePosts);
 }
 
 export function formatDate(date: string, includeRelative = false) {
