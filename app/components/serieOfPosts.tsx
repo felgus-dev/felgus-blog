@@ -10,7 +10,7 @@ export function SerieOfPosts({postSlug, serie = ''}: { postSlug: string, serie?:
   return (
     <section className={
       `w-3/4 mx-auto p-4 rounded-lg 
-      shadow-md bg-neutral-50
+      shadow-md bg-neutral-50 dark:bg-neutral-800
       flex flex-col space-y-1 border 
       border-slate-200 my-12`}>
       <Link className="text-xl font-bold" href={`/serie/${serie}`}>{`'${serieTitle}' (${posts?.length} part series)`}</Link>
