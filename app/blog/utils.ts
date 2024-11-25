@@ -89,7 +89,7 @@ export function getBlogPostsOfASerie(serie: string) {
 
   const seriePosts = allPosts.filter(post => post.metadata?.serie === serie);
 
-  return sortPosts(seriePosts);
+  return sortPosts(seriePosts).reverse();
 }
 
 export function formatDate(date: string, includeRelative = false) {

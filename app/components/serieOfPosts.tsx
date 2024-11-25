@@ -13,7 +13,7 @@ export function SerieOfPosts({postSlug, serie = ''}: { postSlug: string, serie?:
       shadow-md bg-neutral-50 dark:bg-neutral-800
       flex flex-col space-y-1 border 
       border-slate-200 my-12`}>
-      <Link className="text-xl font-bold" href={`/serie/${serie}`}>{`'${serieTitle}' (${posts?.length} part series)`}</Link>
+      <Link className="text-xl font-bold" href={`/series/${serie}`}>{`'${serieTitle}' (${posts?.length} part series)`}</Link>
       {
         posts.map((post, index) => (
           <Link className={`

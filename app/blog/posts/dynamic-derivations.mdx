@@ -1,0 +1,79 @@
+---
+title: "Dynamic derivations and its way to kill useEffect"
+publishedAt: "2024-11-25"
+summary: ""
+categories: "react,reactivity,javascript"
+serie: "reactivity-react"
+---
+
+The title is a little “click bait”, but the idea is not wrong.
+
+I don’t have the opinion that `useEffect` is a bad hook, actually it is quite the opposite. But in React, which works as a [derivation machine](https://www.felgus.dev/blog/react-relation-to-derivation), to use `useEffect` for state sync is not the best option, and [not recommended by the core team](https://react.dev/learn/you-might-not-need-an-effect).
+
+### But wait, and if I have the case where I need to sync a state?
+
+Yes, it’s very rare cases and perhaps there are better solution options, but imagine we have a post in a app and we want to have a local state to handle optimistic updates, when the user clicks on like button, but that it syncs with external state (coming from backend) to really know if the like happened.
+
+## Mutable derivations
+
+This is a case where we need a primitive where we can do state and derivation at the same time. Conceptually speaking, we can think of it as a mutable derivation. [Ryan Carniato has a good blog post about it](https://dev.to/this-is-learning/mutable-derivations-in-reactivity-2ffl), but there are some limitations related with React way of managing reactivity, but this new primitive would be derivation and state in just one:
+Derivation as the default behavior, getting the last updated source of truth (the data prop coming from server).
+State when the user clicks on the like button. This change is temporary and will be overwritten on the next dependencies change.
+
+We don’t have it on React, of course, but we can imagine a primitive like that. The positive points of it: 
+- it removes one more use case from useEffect.
+- it makes clear that we have a derivation that can be handled as a state.
+
+## useMemoState
+
+```JSX
+const [internalState, setInternalState] = useMemoState(() => data, [data]);
+```
+
+The hook accepts two arguments like a normal `useMemo`, being the first one the memo function, that would execute on the first time normally, the returned value will be the state. The second argument is the well known array of dependencies, to keep track of the values and re-calculate the memo if necessary. It returns a tuple with two values, the state/memo value and the setter that would change the state temporarily.
+
+Using the hook would be like this example:
+
+```JSX
+function MemoState ({ data }: { data: State}) {
+  const [internalState, setInternalState] = useMemoState(() => data, [data]);
+  
+  return (
+    <section>
+      <p>name: {internalState?.title}</p>
+      <p>{internalState?.like ? "liked post" : "not liked post"}</p>
+      <button onClick={() => {
+        // likePost();
+        setInternalState(state => ({
+          ...state,
+          like: !state.like
+        }))
+      }}>Like Button</button>
+    </section>
+  )
+}
+```
+
+This way you remove the need of a `useEffect` here, knowing exactly what this hook is doing and is capable of, and fill this conceptual gap, where our problem needs a state and a derivation at the same time. Ironically, it removes the need for an effect as a consequence.
+
+### How can we do something similar in React?
+
+In order to follow React rules and keep the hook safe, we will need to use `useEffect` to create something similar in today’s React. I don’t think a hook like that will be made in the future, but who knows, right?
+
+To avoid the usage of `useEffect` here, we will need to use some external code like a mini state library to handle it, or if we want to keep strict React primitives, to use useRef to keep sync of values.
+
+The problem with this approach is that it breaks React rules, and [it’s not recommended by the docs](https://react.dev/reference/react/useRef#usage). Because the only way for it to work without the effect, would be to sync the refs during the render of the component, not safe at all.
+
+So, to keep it simple and safe, a example of hook would be like that:
+
+``` JSX
+const useMemoState = (memoFn, depsList) => {
+  const [state, setState] = useState(() => memoFn());
+
+  useEffect(() => {
+    setState(memoFn());
+  }, depsList)
+
+  return [state, setState];
+}
+```
