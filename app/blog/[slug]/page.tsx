@@ -87,11 +87,6 @@ export default function Blog({ params }) {
       <h1 className="title font-semibold text-2xl tracking-tighter">
         {post.metadata.title}
       </h1>
-      <section className="flex gap-2">
-        {post.categories.map(category => (
-          <Link key={category} href={`/category/${category}`}>{`#${category}`}</Link>
-        ))}
-      </section>
       <div className="flex justify-between items-center mt-2 mb-8 text-sm">
         <p className="text-sm text-neutral-600 dark:text-neutral-400">
           {formatDate(post.metadata.publishedAt)}
@@ -101,6 +96,11 @@ export default function Blog({ params }) {
       <article className="prose">
         <CustomMDX source={post.content} />
       </article>
+      <section className="flex gap-2">
+        {post.categories.map(category => (
+          <Link key={category} href={`/category/${category}`}>{`#${category}`}</Link>
+        ))}
+      </section>
     </section>
   );
 }

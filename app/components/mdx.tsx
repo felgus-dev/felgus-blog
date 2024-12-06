@@ -28,20 +28,27 @@ function Table({ data }) {
 
 function CustomLink(props) {
   let href = props.href
+  const style = { 
+    backgroundColor: '#FF5733',
+    color: 'black',
+    padding: '.1rem .2rem',
+    borderRadius: '4px',
+    textDecoration: 'none'
+  };
 
   if (href.startsWith('/')) {
     return (
-      <Link href={href} {...props}>
+      <Link href={href} {...props} style={style}>
         {props.children}
       </Link>
     )
   }
 
   if (href.startsWith('#')) {
-    return <a {...props} />
+    return <a {...props} style={style} />
   }
 
-  return <a target="_blank" rel="noopener noreferrer" {...props} />
+  return <a target="_blank" rel="noopener noreferrer" {...props} style={style} />
 }
 
 function RoundedImage(props) {

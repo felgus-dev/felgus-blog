@@ -1,0 +1,49 @@
+---
+title: "Reasoning about the useEffect wrong usage"
+publishedAt: "2024-12-06"
+summary: "or the only real problem with useEffect hook"
+categories: "react,reactivity,javascript"
+serie: "reactivity-react"
+---
+
+The most wrong used hook in React is, for sure, `useEffect`. We have multiple reasons for this, not just one. Let’s explore each one of them, from my point of view.
+
+## Lifecycle legacy
+So one of the reasons I think has more impact is that, in the pre-hooks era, we used classes. For those who started to use React in this period, it’s used to use lifecycle methods and this.state. [I wrote a little about this in this post](https://www.felgus.dev/blog/life-cycles-in-react-hooks#old-but-gold-classes). There are people that miss the old but gold classes period, and value its simplicity and directness. It’s a model that fits pretty well with the common knowledge of programmers in general, that learn object oriented and imperative programming, and the mental structure just connects with that model.
+
+Then they added hooks.
+
+## Paradigm mental shift
+The problem is the paradigm shift that happened. Programmers in general are very familiar with the imperative and the object oriented paradigms, they are commonly teached on colleges and courses, mainly the imperative one, follows the common flow of thinking of a human being.
+
+When you switch to different paradigms like functional programming, you face a reversed way of thinking, that is not so close to the common one. This “reversion” makes it more difficult to understand.
+
+Reactive programming suffers the same issue. It’s a change from an active to a passive way of doing programming. We see it with the wrong usage of `useEffect`.
+
+Most of the **"ERRORS"** are state syncing. So, the dev uses the `useEffect` to track some state or prop and based on some logic, to change the state. This case reveals the opposite way of thinking we need here.
+
+In OOP and imperative programming, you are active, doing the changes and logic in a proactive way. Reactivity is based on the opposite, you react to a chance, and declare the calculations you want the system to do when the state changes.
+
+For most of the users, to actively set the new state on the `useEffect` is the direct way, the state changed, so you need to manually track the change and update other states with it. The docs say it’s NOT recommended, but there is no clear reason for this.
+
+[To derive in React is the recommended way](https://www.felgus.dev/blog/react-relation-to-derivation) not just for performance reasons, but for a conceptual one. React is a derivation machine, and the result, in the end, is the derivation of the UI. You don’t need to actively handle these state transitions and recalculations, it just happens, based on the declarative code you wrote.
+
+React docs didn’t explain this very well, after hooks, React core team and content creators didn’t make talks or courses explaining these concepts.
+
+## React’s conceptual confusion
+React seems to have a “conceptual confusion”, the transition to hooks is the most strong example of it, but not the only one. There is one big difference on the usage of hooks, it’s based on reactivity, and even though the React core team jokes about reactivity, it was their decision to switch to it.
+
+Functional components are perfect for it. Each re-render calls again the function, and everything inside gets the state and props current version, so, everything created inside behaves like a derivation. The return, the JSX, is the derivation of the UI.
+
+But React is not the perfect and pure implementation of functional programming and reactivity. It takes concepts and ideas as inspiration and merges them creating their own model, but the core is there, anyway. 
+
+And this needs to be clear. Even without being the example of reactivity, it uses their concepts, and to know deeper the patterns make it easy for a developer to think and create solutions with those primitives. That’s why I’m writing this “Reactivity in React” series, by the way.
+
+Not just say to the users, “don’t sync state on `useEffect`, it’s bad”, but explain why it’s bad and how to think in a way that “sync state” is even the first solution thought.
+
+## Lack of some primitives
+This cause is one that is improving, especially in React 19. [Async derivations](https://www.felgus.dev/blog/async-derivations) was one of the causes to use `useEffect`, but now we will have to use primitive, which fills this gap in some ways.
+
+Of course, we still have some weak spots in the primitives, such as the case for [dynamic derivations](https://www.felgus.dev/blog/dynamic-derivations), and other cases, [but more and more](https://react.dev/blog/2024/12/05/react-19#cleanup-functions-for-refs) React moves more the side effects out of hooks field, as this case of ref callbacks. 
+
+And we can always hope for news in the future. I invite everyone to read all other [Reactivity in React](https://www.felgus.dev/series/reactivity-react) posts and bring specific cases and questions, we can explore and find more solutions to these common problems with reactivity.
