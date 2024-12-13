@@ -1,0 +1,103 @@
+---
+title: "The problem with usePrevious and similar time oriented hooks"
+publishedAt: "2024-12-06"
+summary: "we don't have time travel"
+categories: "react,reactivity,javascript"
+serie: "reactivity-react"
+---
+
+Theo did a [video](https://www.youtube.com/watch?v=B-Xb_8n5wRg) this week about unintuitive behaviors of React hooks, exploring especially the idea of a hook called `usePrevious`, to keep the value version of the last re-render, before the current one. A way of doing some logic with the old and new state.
+
+If you want to see ideas of how to implement it, please check the video, in this post the idea is to explore the conceptual aspect of having a hook like `usePrevious`.
+
+## Reactive expressions
+
+As you can see, we don’t have a primitive hook like this in React. Before hooks, in the class-based era, we had a lifecycle method called [componentDidUpdate](https://react.dev/reference/react/Component#componentdidupdate) where we got all the previous state and props as parameters, why didn't they keep this behavior with hooks?
+
+It can be a little repetitive if you are reading this series of posts, but we need to talk about the [paradigm shift](https://www.felgus.dev/blog/useeffect-wrong-usage#paradigm-mental-shift), in this case.
+
+With classes, when some state updates, you don’t have an automatic way of recalculating the derived values. If you are using some specific props and states to calculate some new value, you need to verify by yourself if some of them have changed.
+
+This way, the solution is to have a callback that is called in all updates, and send to the user the previous values. The app code checks the differences and updates the calculated state with the new result. This is the directness of class-based components, you have complete control of the flow of data, and need to manually control the calculations.
+
+Here we come to reactivity expressions.
+
+Instead of having to check and do the change, you write an expression, the calculation formula, sort of. This calculation needs to be executed with the current state version, without access to the previous one.
+
+Imagine a formula:
+
+```JS
+a = b + c
+
+b = 10
+c = 20
+
+a = 10 + 20
+a = 30
+```
+
+If I use this expression 1 million times, passing b as 10 and c as 20, I will get the same result. This is a pure calculation. React performs the same principle. All calculations of derivations should be pure.
+
+*But why it matters?*
+
+React work in re-renders. Each cycle generates a description of the UI and based on the differences between the current one and the next one, it commits changes to the DOM. Each render is completely separated from the previous or the next.
+
+```JS
+UI = fn(state)
+```
+
+So for each different state version, we got a different UI version. This becomes pretty confusing if we add previous values here. Because now it does not just depend on the state, but on the previousState as well. Instead of having one source, one expression and one result, I can have multiple sources, maybe more complex expressions to handle these sources and inconsistent and unpredictable UI as result. 
+
+Each render will behave differently based on the previous state. And as some of the possible implementations of `usePrevious` rely on time ordering in React, this becomes more dangerous. 
+
+With concurrent features, React can stop without warning a render, to prioritize other actions. Depending on `useEffect` and ref can make you keep a stale version of a “previous” render that is even the real previous one. More mess to reason about.
+
+## Memoization
+
+Think in an expression like this
+```JS
+a = b + (c - d)
+```
+One part of that has priority and needs to be calculated before, let’s think it with javascript code:
+```JS
+const cdResult = c - d;
+const a = b + cdResult;
+```
+
+So now we have two separated expressions that can be calculated separately, and are perfectly pure. But if the value of b changes a lot and the calculation for cdResult is expensive, how can we solve it? Memorizing!
+
+```JS
+const cdResult = React.useMemo(() => c - d, [c, d]);
+const a = b + cdResult;
+```
+
+Now `cdResult` will just be recalculated if c or d changes. 
+
+*But above in the text I said there is no previous value, but how can a calculation of one render be used in the next one? This doesn't break the purity of calculations?*
+
+Actually, no. For example:
+
+```JSX
+// render 1
+// c = 30; d = 20
+const cdResult = React.useMemo(() => c - d, [c, d]); // = 10
+```
+
+Imagine we are in the render number 1. The c has the value of 30 and d has the value of 20, so the result is 10. But as I am memoizing it, React will keep track of the dependencies I added on the array. If some of them change, it recalculates.
+```JSX
+// render 2
+//  c = 30; d = 20
+const cdResult = React.useMemo(() => c - d, [c, d]); // = 10
+```
+
+But they didn’t change. If I call this expression again, with c as 30 and d as 20, I will get the same 10 as result. Even though I am in the render number 2 and other variables have changed, the dependencies I use in this calculation didn’t change. 
+
+I can calculate it again in each render, it’s the default behavior of React, but I can choose to skip an unnecessary recalculation that will return the same value, so I kept it. We kept the purity and we kept the separation between renders
+
+## Previous state
+
+But there is a good place to do logic with previous state, user actions. Of course, that in the moment the callback is called, that would be the current state. But if you have some state that needs to change based on some logic, it’s the place.
+
+Of course it can have very specific cases where maybe you need a hook such as `usePrevious`, but be aware of the inconsistencies it can cause, and try to add guarantees to avoid bugs on the application.
+
+And more importantly, if possible, avoid it.
