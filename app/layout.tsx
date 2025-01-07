@@ -35,6 +35,12 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
+  alternates: {
+    canonical: baseUrl,
+    types: {
+      'application/rss+xml': `${baseUrl}/rss`,
+    },
+  },
 };
 
 const cx = (...classes) => classes.filter(Boolean).join(" ");
