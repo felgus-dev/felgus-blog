@@ -1,0 +1,40 @@
+---
+title: "Why Zustand suceed in the React state management war?"
+publishedAt: "2025-01-17"
+summary: "simplicity and minimalism"
+categories: "react,state-management,javascript"
+---
+
+Zustand reached 49 thousand stars on github last week, which got everybody impressed.
+
+In the last years we saw a change in the state management field, especially in React. The older champion, redux, is slowly becoming a legacy only library, not being so popular like it was.
+
+## Redux era
+
+Redux had the tragedy of being in the right place at the right time, but maybe, not in the best shape. It was the only library that remained from the Flux War, and became the default library on React, especially in the class-based applications era.
+
+Their success was good and evil for them. Because more and more, applications that didn’t need a library like redux were using it. And its rawness made everybody stick to huge boilerplates to structure their states.
+
+I said the wrong shape, because I think that, if [redux-toolkit](https://redux-toolkit.js.org) was the version people used a lot in the past, their views on redux would be different today. Being more positive, than it is.
+
+And [here we come to Zustand](https://github.com/pmndrs/zustand). 
+
+
+## The new champion
+Zustand is [maintained by Poimandres](https://github.com/pmndrs) and their lead maintainer is [Daishi Kato](https://blog.axlight.com). The interesting part of it is that they have not just one, but three state management solutions: Zustand, Jotai and Valtio.
+
+Valtio is the one with least success of the three, but Jotai and Zustand, are, of course, the two bigger ones of the new generation, [even though they are VERY different from one another](https://blog.axlight.com/posts/when-i-use-valtio-and-when-i-use-jotai/).
+
+Jotai is an atom-based library, with very design inspiration on reactivity. [We have a series on reactivity in react, by the way](http://localhost:3000/series/reactivity-react). With a simple and minimalist API, it’s today, the best atom-based tool for React.
+
+But being an atom-based library is not easy. As we know, people still struggle with reactivity and the atom model can be pretty strange for the users that are used to using bigger data structures to handle their data.
+
+That makes the adoption to Jotai harder, and here is the point where Zustand shines the most.
+
+Think that, here in the future, we could look to the past and create a better version of something? This is the sensation [I had looking at Zustand](https://blog.axlight.com/posts/how-zustand-was-born/). Seems like a new version of redux, with a refined and minimalist API, joining things that were splitted (like state and actions) and delivering [good typescript support](https://blog.axlight.com/posts/why-zustand-typescript-implementation-is-so-ugly/) and a powerful middleware system.
+
+These two aspects are very important to me. When you choose a state solution to your application, you may need to extend some functionalities. [Redux had a good middleware system](https://redux.js.org/understanding/history-and-design/middleware), but more complex. Zustand got it right.
+
+Another important difference is the multi-store approach, instead of gigantic states, on Redux. This way you avoid the creation of big reducer combinations and can organize better your architecture, splitting the real global states from page/feature local states, that benefits of being outside of React, without being in a huge blob of redux.
+
+So this makes the success of Zustand not a surprise for me. For the user, it follows the natural React way of thinking, and at the same time seems like a cleaner option if you don’t want to fall in the hell of Contexts (that are so verbose and confused such as old redux was, even its adopters say the opposite).

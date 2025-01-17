@@ -29,11 +29,7 @@ function Table({ data }) {
 function CustomLink(props) {
   let href = props.href
   const style = { 
-    backgroundColor: '#FF5733',
-    color: 'black',
-    padding: '.1rem .2rem',
-    borderRadius: '4px',
-    textDecoration: 'none'
+    textDecorationColor: '#FF5733',
   };
 
   if (href.startsWith('/')) {
