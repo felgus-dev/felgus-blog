@@ -1,8 +1,11 @@
 import { BlogPosts } from "app/components/posts";
 import { getBlogPosts } from 'app/blog/utils';
+import Link from 'next/link';
 
 export default function Page() {
   const allPosts = getBlogPosts();
+
+
 
   return (
     <section>
@@ -16,9 +19,11 @@ export default function Page() {
       fine-grained reactivity, tech products solutions and API design, 
       I will share here ideas and experiences about web and technology in general.`}
       </p>
+      <h2 className="text-2xl font-semibold mt-16">last posts:</h2>
       <div className="my-8">
-        <BlogPosts posts={allPosts} />
+        <BlogPosts posts={[allPosts[0], allPosts[1], allPosts[2]]} />
       </div>
+      <Link href="/blog" style={{ border: 'solid 1px', borderRadius: '5px', padding: '.4rem' }}>see all blog posts</Link>
     </section>
   );
 }

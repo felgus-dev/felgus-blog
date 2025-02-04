@@ -1,0 +1,68 @@
+---
+title: "My React ecosystem stack in 2025"
+publishedAt: "2025-02-04"
+summary: "The tools I used for production apps"
+categories: "react"
+---
+
+We are in 2025, and the React ecosystem seems pretty confusing for some people. The “high” number of options is seen as a bad thing for some devs, and to make a decision about which one to use is hard.
+
+So, to contribute to the discussion and maybe help someone in the decision making process, I will list my personal choices of the React ecosystem, and some principles I use when I’m building a React application.
+
+First of all, let’s establish some principles I follow:
+- I don’t rebuild complex stuff that can be a library.
+- I value tools that make reactivity easier in React.
+- [Context API is not a good idea for dynamic data](https://blog.isquaredsoftware.com/2021/01/context-redux-differences/), so I don’t like to use it, preferring to use state managers.
+- I don’t fight against the “market popular tools”.
+
+## Global State Management:
+It’s important to notice the separation between different areas of state management. Server state is separated in a different section, so I will talk about them later. But, in practice, using a server state solution and handling your local state with useState covers most part of state work, remaining basically the few cases for a “global” state. 
+
+I stick to just using [Zustand](https://zustand.docs.pmnd.rs/getting-started/introduction) when I can, I see it as the new redux, but modern and minimalist. We have a simple way of creating the store, instead of a reducer and actions splitted, and a good middleware system and typescript support. I talked about why [Zustand succeeded in the state manager war](https://www.felgus.dev/blog/zustand-success) in the new generation and it’s today, the most popular option, what brings value for community and shared knowledge reasons.
+
+[X-state](https://stately.ai/docs/xstate) is very good for complex scenarios, as the state transitions make it mandatory for you to make safer logic. But it can be too verbose for common cases, even with [X-state Store](https://stately.ai/docs/xstate-store), so I prefer to keep it for when it’s really necessary.
+
+## Server State Management
+For this case there are good options, [SWR](https://swr.vercel.app/pt-BR/docs/getting-started) is good and I used in some cases where I just needed a simple server cache manager solution. But I prefer [TanStack Query](https://tanstack.com/query/latest), for me it’s API and concepts cover all cases we can have in a complex application. And [TanStack](https://tanstack.com) has other great tools as well, such as its router, forms, and fullstack framework, making its interconnections even better.
+
+## Router
+For the router, thinking just on the SPA side, I always used [react-router](https://reactrouter.com) and its latest version is even better, with loaders, and some features merged from remix. It’s a solid and reliable option and it worked pretty well for all types of application I worked so far, from the big ones to the small.
+BUT, [TanStack router](https://tanstack.com/router/latest), the new kid in the block is pretty awesome, with **STRONG** support for typing, and a bunch of features. I like the view and concepts of Tanner and company, and its new router solution seems a great improvement to what we had so far. I will try to use TanStack router in my next SPA projects, but both options are great.
+
+## Styling
+Probably it will be the most controversial part. I worked with a lot of options in all these years: sass, css modules, styled components, style props, and now I’m learning Tailwind. There are some points to consider. I usually prefer to keep css as close as possible from the component, to use the architecture of components and features as the boundary for the styles. To handle complex css is hard, and you will probably end in a mess working in a team.
+
+The best experience I had so far, for application development, was to use style props. For example, using a component library such as [Chakra-ui](https://chakra-ui.com), and structuring your application with their base components. For the moment where you need to change the styles to match the UI prototype, use the style prop, an internal way of css-in-js to directly change the style of a component tree. 
+
+There were a few cases where I needed it, and the experience was smooth, especially in Chakra-ui. For design systems, I would stick to using another library as base, such as  [Shadcn-ui](https://chakra-ui.com), and use the tool that fits best with that library, for example, in the case of shadcn-ui, just use [Tailwind](https://tailwindcss.com). Does not make sense to fight against the base library you choose to use.
+
+## Components Library
+Another case of multiple experiences during the years: React-bootstrap, Material-UI, Ant-design, Chakra-ui and now starting to use shadcn-ui. For design systems, I think it’s hard to compete with [Shadcn-ui’s](https://chakra-ui.com) proposal, because people think the hardest part of a design system is the design part, but it’s not, the system part is the problem. To create components that behave correctly, cover all edge cases, have a good API design, accessibility, performance, is not trivial, and most teams did it wrong. Shadcn-ui gives all that for you, and it gives the code. You just need to match the design adjustments, extend some functionalities, and that’s it.
+
+But for common cases, where you just need a package of components to use easily, with few design adjustments, my best experience was with [Chakra-ui](https://chakra-ui.com). The cleaner options, good API, good style props system, some community resources extending some components, a solid choice.
+
+## Bundlers
+I used webpack for a long time, but it’s more complex and slower. [Vite](https://vite.dev) is a solid option, and that’s the reason it's so successful. For an application developer, it fits pretty well, because it's simple and easy to config. For more complex cases, they have features that cover the cases. I can’t see a reason to not use it.
+
+## Testing
+For testing we need to separate in two sections.
+
+For component testing, [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/) is by far the best option we have, that’s it. But for test running, assertions, coverage, we have a dispute. [Jest](https://jestjs.io) is the older and more established option, but with a lot of quirks and some problems that makes the experience not so good. I still use Jest in the projects I work at my job, for legacy or old decision reasons. 
+
+In my side projects, I’m just using [Vitest](https://vitest.dev) as a replacement, it's the fastest, and cleaner solution. I want to use it in React projects in the future.
+
+## Form Management
+I usually work in big applications, so form management libraries make sense for my use cases. [React-hook-form](https://react-hook-form.com) is today my choice, cleaner API, complete set of features, good integration with [Zod](https://zod.dev) for schema validation, it just works and makes handling complex forms much faster and easier.
+
+## Rendering Strategies
+We had a huge hype for some years to SPA, then it went to the hype of SSR, but both had their pros and cons.
+
+SPA makes sense in some cases. If the app is under an authentication layer, and doesn't need a strong SEO, it makes sense. Loaders mitigates one of the bigger problems that were the requests waterfall caused by the common request on render pattern. It makes SPAs so much faster. There is another benefit: infrastructure. You don't have to handle the complexity of maintaining a server instance, and the scale of it. Just some static files, a CDN to serve, and your SPA can handle hundreds of thousands of access with a very low cost. 
+
+But, there are cases where it is not good. Use facing applications, SEO needs, users with lower end devices, with bad CPU and ram memory power. For these reasons, server rending can help (honestly React is not the best option to solve this, due it’s internal flaws).
+
+[Next.js](https://nextjs.org) is my option. React Server Components make it even better and I’m very excited to see it being used in more and more cases. Even as a BFF replacement, and a performance in lower end device improvement.
+
+## The future?
+I’m very excited with [TanStack Start](https://tanstack.com/start/latest) and [Waku](https://waku.gg) on the framework aspect. With different approaches, they can replace Next.js in the market offering better experiences for different audiences. I’m focusing on Next.js yet, but I will give them a chance when it makes sense for me.
+
