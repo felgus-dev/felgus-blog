@@ -1,0 +1,52 @@
+---
+title: "React may be missing the point of React"
+publishedAt: "2025-02-11"
+summary: "or the two biggest problems with it today"
+categories: "react"
+---
+
+React is almost 12 years old, and during these years it had a lot of critiques, both fair and unfairs. In internet discussions, we see a lot of the same arguments, but they commonly don’t touch on some deeper problems of React today.
+
+## Ecosystem
+When people talk about React, it’ll in some time, talk about their ecosystem. You name it, but we use them for router, testing, components, utilities, form validation, bundler, etc. This ecosystem speeds up our development giving us, for free, complex tools that would take weeks or months to build, very optimized, polished, battle tested, and ready to be used in production.
+
+But how React treats their community?
+
+If you have been following the React community on the web, you probably saw some of the dramas that happen all the time with React. Since [Suspense behavior changing without warning](https://tkdodo.eu/blog/react-19-and-suspense-a-drama-in-3-acts), [monkey patching been tested in fetch](https://www.reddit.com/r/javascript/comments/yex2oj/so_apparently_theres_now_code_in_react_to/), and other problems that happened. 
+
+It’s constant the complainings about the communication, and community management. They created a working group to React 18 that was applauded by community leaders, but didn’t repeat it to version 19. There are complaints about poor communication of next steps, what they are working on and a lack of transparency.
+
+The [last CRA drama](https://github.com/facebook/create-react-app/issues/17004#issuecomment-2617810604) exposed other complaints, now about the “don’t have favorites” policy that React teams said to follow. But, at the same time, it has a clear conflict of interest when two of the [main developers are in vercel](https://vercel.com/blog/supporting-the-future-of-react) and obviously working and helping Next.js be the primary React framework option in the market.
+
+React is too big to play amateurism in this scenario. It’s the biggest frontend tool we have today and it should have better communication between their ecosystem creators and with the open community as a whole. It should have developer relations focused people in the team helping to solve this gap.
+
+And most of all, treat the ecosystem leaders as allies, not enemies. They help to create the tools we use and are in direct contact with a huge base of users and of course can contribute in the internal discussions. A permanent working group would be great to bring all these ideas to the table, and create an open communication channel with them.
+
+## Mental Model
+I wrote a lot about the [conceptual confusion React](https://www.felgus.dev/blog/useeffect-wrong-usage) has with hooks, but this problem extends to other parts as well. And it becomes a bigger problem when we recognize one of the strengths of React, its mental model.
+
+React is, above all, a strong mental model. We saw a lot of the idea of “thinking in React” or the “React brain” and that's true. React sells a “UI language”, a specific way of describing user interface. A language that in practice, behaves like a runtime.
+
+And React plays a thought leader role in the frontend industry. The ideas and innovations it brought changed the other frameworks' path. We could see it with:
+- component model
+- feature concern
+- JSX
+- flux
+- hooks concept
+- suspense
+- server components
+
+But more and more, its mental model seems not so clear anymore. Parts of that comes from confusing statements React team members gave, part of their communication and part is from conflicts on the thoughts.
+
+We passed years of seam React team members saying Redux was a mistake, then, they brought useReducer to the table. Redux is not just the library, but its concepts and reducers/actions are a fundamental part of that. If redux was a mistake, why bring a similar hook?
+
+Context was another topic, we saw, when it came to React, all the problems related with performance and it was clear at the time that [it should not be used for dynamic data](https://github.com/facebook/react/issues/14110#issuecomment-448074060). Now, in the new docs, it’s the [recommended way of handling complex state](https://react.dev/learn/scaling-up-with-reducer-and-context) (with useReducer, by the way, it’s funny if it was not tragic). 
+
+Then we had `useSyncExternalStore`, that don’t fit very well with concurrent features, one of the [central points of React recent years development](https://blog.axlight.com/posts/why-use-sync-external-store-is-not-used-in-jotai/).
+
+Now with server components and actions, we see another of these communication issues and a confusing way of adding a new mental model, with a lot of tries of explaining its concepts, but failing in most parts of them. The same happened with hooks, and we had years of bad usage and mistakes being made, what impact in the application quality and the view people have of React.
+
+More and more, even the experienced React people, who see all these problems are talking of moving away from React. It’s not an easy thing to do, because of the way the market works and the current economic/political scenario.
+
+But what remains to React is the opportunity to be more open, communicate better with the community and stretch the relations with the thought leaders, it’s unsustainable continuing the other way.
+
