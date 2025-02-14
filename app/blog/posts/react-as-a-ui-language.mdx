@@ -1,0 +1,36 @@
+---
+title: "React as a UI language"
+publishedAt: "2025-02-14"
+summary: "What is React?"
+categories: "react"
+---
+
+Probably you have a heart that is a library, it’s even in the docs, or a framework. My answer is different. React is a UI language that behaves as a runtime. Let 's see why.
+
+## UI language?
+“So silly”, you may think, Javascript is a language, not React. Yes, technically correct, but [it’s not just me talking about it](https://overreacted.io/react-as-a-ui-runtime/). Let me explain the idea.
+
+React has its own way of doing things. Today, with hooks, it’s a intrinsic connection between a reactive components model, using the “virtual-dom” and connecting it to the hooks, creating a coarse-grained reactivity model based on React elements, the description of the UI.
+
+To write React code is different from writing common javascript code. You normally don’t rerun a LOT of times your functions in a recursive tree, with a lot of complex management of it to generate your result. 
+
+And we have JSX, that, ironically, has as one of the main characteristics, to just use common javascript to manage its logic, differently from other DSLs that have their own directives. The user likes this freedom and values it.
+
+But the React mind goes more than hooks. There is other specific React stuff we get used too, such as a syntactic event system, the concurrency features, Fiber architecture, component model, logic sharing with hooks, suspense, form hooks, and now React server components and actions, server directives, compiler, etc.
+
+All that creates in our mind the “React way” of describing and handling interactions in a UI. It’s a language, with its own instruction and expressions, a language that can be shared in other environments, maintaining its behavior and concepts (like on native, desktop, web, VR, etc).
+
+They thought React, since the beginning to be more than just a library, and in practice, is even deeper the difference.
+
+## A runtime?
+When you think in a javascript runtime, you may think in Node.js, and that’s right. But React, more and more, it’s becoming a runtime by themselves.
+
+Since the beginning we have had [syntactic events](https://legacy.reactjs.org/docs/events.html). React managed the elements events with their own system, fixing browser inconsistencies and adding more specific behaviors to it. In the end, it uses the event system from the browser, but manages all the flow of data and behavior.
+
+Then we had [Fiber, with its scheduling](https://jser.dev/react/2022/03/16/how-react-scheduler-works/). To schedule tasks and manage is a job for the runtime. The browsers didn’t have it, so they made it by themselves. That gave React the power to interrupt work, reuse the incomplete work or start from scratch again, the concurrent features we know now. Internally, React makes the role of an event loop and call stack managing which unit of work is being executed at that moment and which specific tree of rendering is being executed..
+
+With [React Server Components](https://react.dev/reference/rsc/server-components), React goes even further. Now works like an own browser, managing the connection between server work and client, being an intermediary layer that joins both sides. That way, you can use React Server Components even in places without a server, or in mobile, with [React Native](https://www.youtube.com/watch?v=djhEgxQf3Kw).
+
+And there was the [infamous patch monkeys of fetch](https://www.reddit.com/r/javascript/comments/yex2oj/so_apparently_theres_now_code_in_react_to/) and date. React takes the place of runtime API, changing to work in their specific way and managing it’s workflow, in connection with the real runtime one.
+
+And this way we have it: a UI language that works like a runtime.

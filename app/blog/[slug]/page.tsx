@@ -4,6 +4,7 @@ import { formatDate, getBlogPosts } from "app/blog/utils";
 import { baseUrl } from "app/sitemap";
 import Link from 'next/link';
 import { SerieOfPosts } from 'app/components/serieOfPosts';
+import { MyLink } from "app/components/myLink";
 
 export async function generateStaticParams() {
   let posts = getBlogPosts();
@@ -100,6 +101,13 @@ export default function Blog({ params }) {
         {post.categories.map(category => (
           <Link key={category} href={`/category/${category}`}>{`#${category}`}</Link>
         ))}
+      </section>
+      <section className="flex gap-2 mt-6">
+        <MyLink
+          href={`https://bsky.app/search?q=${baseUrl}/blog/${post.slug}`}
+        >
+          Discuss on Bluesky
+        </MyLink>
       </section>
     </section>
   );
