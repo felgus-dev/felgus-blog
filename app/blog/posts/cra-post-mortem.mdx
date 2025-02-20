@@ -1,0 +1,61 @@
+---
+title: "Create React App Post Mortem"
+publishedAt: "2025-02-20"
+summary: "Press F to pay respects"
+categories: "react"
+---
+
+I wrote a post last week about [React's current moment](https://www.felgus.dev/blog/react-issues), and there, I mentioned the CRA drama that was happening at the time. Things evolved quickly and the [React core team officially deprecated CRA (create react app)](https://react.dev/blog/2025/02/14/sunsetting-create-react-app). But the discussion has not ended yet…
+
+## Repercussion
+
+First of all, I was very happy to see [my post being recommended in the discussion](https://bsky.app/profile/acemarke.dev/post/3lif66rqsm32c) by [Mark Erikson, the maintainer of Redux](https://blog.isquaredsoftware.com/about/) and the guy that started the hard discussion of CRA. He was writing a very long blog post not just about CRA, but an overall history and view about React and its relation with the community. He didn’t publish the post, after some direct discussions with React team members.
+
+But, he recommended my blog post [‘React may be missing the point of React’](https://www.felgus.dev/blog/react-issues) as a shorter version of what he said and I was truly happy with it. Then, in the discussions after the “death” of CRA, it was pointed out that the React team communication about the deprecation and not recommending Vite on the docs were a problem.
+
+## The Vite drama
+
+The discussion is wilder than just **“recommend Vite or not”**. Because, the community is a living thing. Even though React was not recommended in the past, people went to use Vite and their templates, even though having the official documentation pointing to it as a good option is important.
+
+The market is diverse and huge enough to have edge use cases that are not just on the “you need a router to work with” side. Most of the React team's arguments are about the basic Vite setup not being beginner friendly, because they will probably need a router and it's complicated.
+
+*But is it really so complicated?*
+
+I really don’t like the paternalist tone of it. People, even beginners, are capable of understanding things. If they may need a router, why not add a good overview of the problem, explaining the possible solutions, giving information to the user and letting them make the decision, not a **“they may be silly, so just use a framework, that is easy”**.
+
+Other people complained about it as well, and he, again, Mark Erikson, [filled a PR](https://github.com/reactjs/react.dev/pull/7618) with suggestions to the documentation based on the feedback of the community.
+
+
+## Feedback
+
+One good thing about it was the reaction of the React team to the feedback. The PR from Mark was merged with some minor changes to the official docs. In the end, we have a [better documentation, which explores better the problem space, recommend Vite for some cases and explains some questions](https://github.com/reactjs/react.dev/pull/7618). 
+
+It is really good to see. One of the biggest complaints we have today is about the communication of the React team, and we had another tone mismatch on this one. But, being able to debate with the community and accept feedback and improve from it is a good move forward.
+
+## Haters?
+
+It’s important to clarify one thing about some of the critiques that were made. Of course there are haters and people that don’t really want to help improve React, but just throw shit around the maintainers. But, it’s important to separate things. 
+
+For example, two of the stronger critiques came from Mark Erikson and Tanner Linsley, two important community leaders. What were their reactions with these last changes? Tanner and his team said positive things about the change and tried to create an alternative solution as well. Mark helped with the documentation changes and [put on hold his extensive blog post](https://bsky.app/profile/acemarke.dev/post/3lif66rqsm32c), that would probably expose more internal problems, some stuff that us, common folk, even know that happened.
+
+These are not actions from haters that just want to set everything on fire. They care about React and as I said in the last blog post, it is important, for the React team, to bring them closer to help to improve React for the future.
+
+## Opportunity
+
+Talking about Tanner, it was a very [good move for Tanstack Router](https://bsky.app/profile/tannerlinsley.com/post/3lif6fdpzkw2s). One day after the deprecation, they released an application generator, very similar to CRA was, but using Vite and Tanstack Router, all configured and ready to use. 
+
+A good way to try to catch the opportunity CRA death opened and bring new users for their tools. Very curious to see the result of it.
+
+## React direction
+
+Another topic of discussion was the change in perspective, when React stopped to emphasize SPA architecture and move into the direction of server. CRA stopped to have active maintainers, SSR and now, Server Component became the new trend, and there is a sense of “SPA being left behind”. 
+
+Even though, with all the problems we have with SPA, there are some [cases where it really fits well](https://www.felgus.dev/blog/react-stack-2025#rendering-strategies) and it will continue to be popular in the market. Now with `loaders`, even more. And [React Router v7+](https://reactrouter.com) and [Tanstack Router](https://tanstack.com/router/latest) are keys to explore and understand how the SPA field will evolve in the next few years.
+
+## Create React App
+
+Last, but definitely not the least important, CRA. I really think the lack of maintenance was a good decision of the React team in the past years. The existence of the Vite React template being so popular and other alternatives being launched show that a huge portion of the market still sees value in an application generator like CRA.
+
+For me, the best solution was CRA to be updated and evolve with the React ecosystem during the years. It didn’t happen, so what remains is the alternatives available. After all, it was already dead for some years, now it’s just the officialization of it.
+
+Anyway, rest in peace Create React App.
