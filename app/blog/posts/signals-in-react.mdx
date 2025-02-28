@@ -1,0 +1,59 @@
+---
+title: "Signals in React? Not a good idea"
+publishedAt: "2025-02-28"
+summary: "The problem of merging two opposite models"
+categories: "react,reactivity"
+---
+
+Signals gained a strong relevance in the last year, being one of the new trends among the frontend frameworks. But there is one of them that is not in this path, React. The community tried to create their own signals for React implementations, however, is it a [good option](https://blog.axlight.com/posts/why-you-dont-need-signals-in-react/)?
+
+## What is signals?
+
+Maybe this will be the question that most people would ask about this topic. Signals is the idea of using a fine-grained reactivity system to render UI. Of course, you can have just a reactivity library to manage your state, something like [Jotai](https://jotai.org) or even [Estado.js](https://github.com/felgus-dev/estado.js) (my fine-grained reactivity library that I created for learning purposes), but if you just use it normally in React, with hooks, it’s not the idea people have of signals.
+
+The main advocate of this idea is [Ryan Carniato](https://dev.to/ryansolid), who I always mention in the posts about reactivity. He created a framework based on this concept, [Solid.js](https://www.solidjs.com), that uses signals as the core system to manage the UI.
+
+Fine-grained reactivity systems are great because of its principles: efficiency and consistency, everything you need when you need to manage the UI render. You will have your state and derivations organized as a graph and your reactivity system will be responsible to run the least number of times the recalculations and effects from it.
+
+Solid.js uses the idea of [`renderEffects`](https://www.solidjs.com/docs/latest/api#createrendereffect), which are different from common side effects. These ones are focused on the interaction with the UI. At the same time, Solid.js has the idea of removing the component boundary on runtime, running the component just one time, creating the UI structure and the signals connections, and then, just updating specifically the elements that are using the signals that were updated.
+
+This flow reduces the workload, making the UI faster and lighter, with less CPU and memory usage and a better performance on UI operations, overall.
+
+So, to recapitulate:
+- fine-grained reactivity system to manage state.
+- directly updating UI based on render effects from the reactivity primitives.
+
+## React with signals
+
+So, we don’t have a primitive signal in React, yet. And probably never will, at least in the userland. But the community created their own. [Preact/signals](https://www.npmjs.com/package/@preact/signals-react) and [Daishi’s jotai-uncontrolled](https://github.com/jotaijs/jotai-uncontrolled) and [create-react-signals](https://blog.axlight.com/posts/demystifying-create-react-signals-internals/) are the most popular ones. And are gaining some attention from the public.
+
+But there is a problem here. To be signals, we need to directly update the UI based on the primitives, right?
+But how to do it in React?
+
+And here we find the 2 problems with signals in React: one practical and one conceptual.
+
+## The practical
+
+It’s important to notice that React is the way it is for a decision, not an occasional mistake. There are reasons to prefer the React model, one of them is the [rawness of data](https://overreacted.io/react-as-a-ui-runtime/). When a component renders and it has a hook inside, the first variable of the tuple is the state value, raw data. If you want to use it in a conditional, in a loop, pass as arguments to other functions and components, you just pass it through.
+
+There is a difference when you are using a fine-grained reactivity library. You are using data structures that have methods to get and set data. The way to access it and make it still reactive is complex. If you call the method or the property to get the raw data, how does it still make reactivity available?
+
+In solid.js, for example, [you receive a function to get](https://www.solidjs.com/docs/latest/api#createsignal), when you call it, it returns the raw data. At the same time, it connects the signals that are being called with the one above it. That’s the reason you always need a primitive such as createMemo to do the derivations, and that is important to keep the connections between signals and enable reactivity. With React, you just need to create a new constant or variable [calculating your new derivation](https://www.felgus.dev/blog/react-relation-to-derivation).
+
+To pass signals as params or props is not trivial as well, you need to make sure that you are passing the signals object, not the raw data, to avoid the usage in other parts of the UI or other derivation that would not be able to connect the signals as a dependency and recalculate as it changes.
+
+Conditionals and loops are other common cases that need attention. In Solid.js it has the directives components, such as [For](https://www.solidjs.com/docs/latest/api#for) and [Show](https://www.solidjs.com/docs/latest/api#show), which receive the signals, establish the connections to enable reactivity and manage the rendering of the items, or the conditional rendering. 
+
+In React you just use the raw data with common javascript operations to return the React elements. When using React with these signals implementations, especially the ones that try to bypass the diff, it has complications, because all these special behaviors would need to be treated like that.
+
+Some of them use custom JSX transformers to hide some of the implementation details, but these cases would still need to be handled manually by the user. And, as React does not support these behaviors, these libraries are utilizing “hacks” to change the default behavior of the library, which could bring unexpected behaviors that would not be considered as bugs, so you are by yourself making sure that it will behave correctly.
+
+## The conceptual
+
+React is a [coarse-grained reactivity library](https://www.felgus.dev/blog/life-cycles-in-react-hooks), being structured in reactive components. So, the re-render is part of this model. It enables the state transitions, the derivations creation and the production of the React elements tree, that is used in the reconciliation of Fibers to get the UI updates.
+
+You should care and avoid unnecessary re-renders, but don’t confuse the unnecessary with necessary renders. These re-renders, the unidirectional data flow and data rawness is the base of the React model, allowing us to predict and reason about the application functionality.
+
+If you value the fine-grained reactivity, why hack React to get a similar version and not just use one library that truly supports it, such as Solid.js, Vue Vapor, Angular, Svelte, etc. There are very good options in this field where you will get all the benefits without the flaws you got with React.
+
+After all, I truly hope React brings something internally to fix the performance issue it has compared with the other options. That would attack the pain point people really have and avoid these attempts of fixing it, which normally causes more problems than it really solves.
