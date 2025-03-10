@@ -19,7 +19,7 @@ export default function Page() {
       I will share ideas and experiences about web and technology in general.`}
       </p>
       <p className="mb-4">
-        At the moment, building <MyLink href="https://github.com/felgus-dev/use-zod">useZod</MyLink> and doing a deep dive in backend development.
+        At the moment, building <MyLink href="https://github.com/felgus-dev/react-effective">react-effective</MyLink> and doing a deep dive in backend development.
       </p>
       <h2 className="text-2xl font-semibold mt-16">last posts:</h2>
       <div className="my-8">

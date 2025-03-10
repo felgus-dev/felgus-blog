@@ -1,0 +1,43 @@
+---
+title: "The data should just flow"
+publishedAt: "2025-03-10"
+summary: "TLDR: just use React compiler"
+categories: "react,reactivity"
+---
+
+There is a funny thing. I made a post last week about [signals in React](https://www.felgus.dev/blog/signals-in-react) and there, I argued about the different approaches to data management of a signals based and React model, and how they are conflicting. 
+
+But there is a big problem here, in theory, the data in React should just flow through your app, but in reality we have a different scenario.
+
+## References
+
+React with hooks are based on functions, as you know. And the React model is based on raw data, as I mentioned in the last post. If we just merge both concepts together, everything should just work fine, but, re-render everything and doing simple derivation is not practical in all the cases, because of a limitation we have.
+
+When we do a change in a primitive value, it is easy and cheap to identify it, but how to do it in an array or an object? The deep comparison for both are not so cheap, and grows with the number of items of the array of how big and deep the object is. So doing a deep comparison to identify changes is not doable, so React relies on a characteristic of these types, its reference stability. 
+
+So, when you do a change, you create a new object reference, using immutability. There are other benefits as well, such as a certain safety in not changing the same object all the time in terms of runtime. But, the biggest point here is that, if the reference has changed, React treats it as a new value and uses that shallow reference comparison to know if it will run the memoization recalculations or to bailout or not in a memoized component.
+
+If we have an expensive calculation or want to enable memoization of components to avoid unnecessary re-renders, we need to memoize the functions, arrays and objects. And here the problem begins.
+
+## Stale data
+
+As React relies on raw data, we don’t have an automatic way of setting the dependencies of our recalculations (with the compiler we have, which will really help to avoid these types of issues). So, the user can choose to respect or not the React Rules. We have eslint configs to enforce that all external dependencies should be in the dependencies array, but the user can just add a comment to hide the warning.
+
+The problem is, when you do it, you are clogging your data. Yes, think of data as water running through pipes, `useMemo`, `useEffect` or `useCallback` with missing dependencies are like something clogging the pipe. The water stops there and what you have is old water that should be flowing.
+
+The problem it causes is that the data will be stale, using old versions of the variables. Other parts of the UI have updated data, and some of them will have old data, which breaks consistency and most of the time will be seen as bugs. If the app uses `useEffect` to sync data, these can cause the same type of bugs.
+
+But, why does it happen?
+
+## Lost on closure
+
+You probably already know it. But this happens because of how closures work in javascript. When one of the dependencies of the array changes, React calls again the function that creates the memoization or executes the effect. That function was passed as argument to the hook during that render cycle, getting the closure context of the values present on the component function at that time. It executes the callback and that’s it.
+
+But in a next re-render, none of the dependencies have changed, because you missed them in the dependencies list. The `useMemo` doesn't call the function again, the `useEffect` doesn't call it as well. In this moment, the state of the app moved forward, but your memo is stuck in an old version of the values.
+
+This is the clogging, in this case, the app is not flowing the data, and it’s not using one of the best features of React. That’s why the core team advertises so much for using react-hooks and avoiding this type of practice.
+
+## Compiler on rescue
+But now we have the compiler, still in Beta, but with very good feedback. I hope in the future, more and more, the users stop trying to avoid adding the correct dependencies in order to optimize or correct the behavior of the app. 
+
+This combined with exploring and learning more about the [react reactivity model](https://www.felgus.dev/series/reactivity-react) will increase the codebases and the flow of data.
