@@ -1,0 +1,45 @@
+---
+title: "Common React libraries architecture"
+publishedAt: "2025-03-10"
+summary: "under the hood of ecosystem"
+categories: "react"
+---
+
+React is famous for its ecosystem. We have different tools that do state management, form, routes, styles, etc, but how do they work internally?
+
+Most of them are similar in some architectural choices, more aligned on how React works, so let’s explore these common structures.
+
+## Binding
+Most of them rely on an architecture of two main parts, the core and the binding. The core is where the logic and functionally resides, and the binding is the connection between the core and the frontend tool. In the case of React: components and custom hooks.
+
+In most of them, the core object is created externally. This has some benefits as you escape from the re-rendering cycle and don’t need to care about the React memoization process. Then to connect with React it normally relies on Context API.
+
+That’s why so many tools have Providers. This is the way libraries inject in all component tree the external core data. Context API has a problem with dynamic data, causing performance issues, but as the reference from the core is stable, it’s not a problem.
+
+This way, just adding other components and hooks below the Provider in the tree, just works, even though you didn’t connect them directly. Get the case of [Tanstack Query, for example.](https://github.com/TanStack/query/blob/main/packages/react-query/src/QueryClientProvider.tsx) Using the core client and Provider, you can use the same query cache in different pages, just using the same key for both. You don’t need to care about sharing this data, the library connects everything throughout the core and Context Provider.
+
+You can see this behavior in libraries such as React-router as well, where you call useParams, useNavigate and get data and methods from the core of the router, connected with the hook [by the Context used internally by its custom hooks](https://github.com/remix-run/react-router/blob/9d0020a8fa77a54f0e026fd7710a856d6172b7a8/packages/react-router/lib/hooks.tsx#L106).
+
+## External connection
+But, then, we have another problem. The client needs to use some pattern to connect with the React rendering model. How React would know that something in the client changed and it needs to re-render to use the latest value?
+
+Most of them use the Observer pattern. It has a method to subscribe to changes and execute a callback function to notify about data changes. Then a getState method to get the current raw data and one method to trigger the state update, it can be a state setter, a dispatch, a refetch, whatever. Of course that the libraries can have more methods in their core, but these 3 are the essential ones.
+
+To connect with React we have 2 ways:
+- [useSyncExternalStore](https://react.dev/reference/react/useSyncExternalStore): that is a primitive hook from React created specifically to handle external data. You pass to it the getState and subscribe functions of the core (and the getState for server side rendering, if the library handles that case) and it will subscribe to changes and re-render, calling the getState function to return the data.
+- custom hook: you can do your [own version using useEffect and useReducer](https://github.com/pmndrs/jotai/blob/ec352d5db13255ebfa711bc7d29f8e251ad3f02c/src/react/useAtomValue.ts#L114). In the past, before existing useSyncExternalStore everybody did this way and it has its benefits.
+
+The `useSyncExternalStore` is de-optimized, so it’s treated as an update of high priority, killing the concurrent features optimizations that you may have in your application. It can be the desired behavior, because this way you avoid tearing (or to have an not updated version of the state being used). 
+
+It’s true that concurrent features are basically accepted to have tearing in some states to prioritize other ones. But React considers an external state to have “tearing” a bad pattern, and because of that, it syncs when the client triggers the notification, you get a re-render with the latest version of that data.
+
+[Creating your own connection avoids this scenario](https://blog.axlight.com/posts/why-use-sync-external-store-is-not-used-in-jotai/), because you can treat the external state as a least priority one, and this way, pausing the re-render of the last update to handle other interactions.
+
+It’s a trade-off that needs to be analyzed, but most of the libraries just stick to using the `useSyncExternalStore` solution.
+
+## React 19
+The current version brings updates that will affect the implementations of libraries. The [use](https://react.dev/reference/react/use) of primitives to handle Suspense and promises will be one that will appear the most, but there are cases where you may need more new hooks.
+
+Form libraries, for example, can have a great usage for [useOptimistic](https://react.dev/reference/react/useOptimistic), [useFormStatus](https://react.dev/reference/react-dom/hooks/useFormStatus) and [useActionState](https://react.dev/reference/react/useActionState), specially with React Server Components, such as in Next.js, Waku and Tanstack Start.
+
+These architectures can evolve and change to adapt to specific cases, but, in general, this is a high view of the current React ecosystem structures.
