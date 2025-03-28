@@ -1,0 +1,70 @@
+---
+title: "React Suspense Gate and how to be right and wrong at the same time"
+publishedAt: "2025-03-28"
+summary: "What we can learn with it?"
+categories: "react"
+---
+
+I know this is an old story now, but I was thinking this week about some questions about the Suspense Gate drama we had with React last year, and some of the learning we can have with it.
+
+If you don’t what is it, check [this blog post from Dominik Dorfmeister.](https://tkdodo.eu/blog/react-19-and-suspense-a-drama-in-3-acts)
+
+But, first of all, let’s add some suspense…
+
+## Suspense
+
+It’s important to understand how [Suspense](https://react.dev/reference/react/Suspense) works internally. It relies on an [offscreen](https://react.dev/blog/2022/03/29/react-v18#what-is-concurrent-react) component that really renders the components that are inside the Suspense boundary, just not throwing the layout effects, but applying other effects (such as useEffect ones) normally. There is the mode prop that is set to hide.
+
+This is central to “Suspense Gate”, because the fetch-on-render pattern is based on that, you have components that will not be shown on UI, but that renders anyway. This way it can start promises and other async logic inside, what is used to start the fetching, if it’s placed inside the component.
+
+```JSX
+export default function App() {
+  return (
+    <Suspense fallback={<p>...</p>}>
+      <RepoData name="tanstack/query" /> // pre-rendered
+      <RepoData name="tanstack/table" /> // pre-rendered
+    </Suspense>
+  )
+}
+```
+
+The RC19 (release candidate of React version 19) change was: just rendering in offscreen the primary child of Suspense, avoiding the rendering of following children. The idea behind it is to save the cost of rendering “unnecessary” children, that may be expensive ones, and returning the fallback sooner with it.
+
+```JSX
+export default function App() {
+  return (
+    <Suspense fallback={<p>...</p>}>
+      <RepoData name="tanstack/query" /> // pre-rendered
+      <RepoData name="tanstack/table" /> // NOT pre-rendered
+    </Suspense>
+  )
+}
+```
+
+But there is a problem, the reality…
+
+## Render as you fetch?
+
+There is a fun thing about the idea behind this change. The React core team justification is that the promise start, as in fetch, should happen in Server Components or in route loaders, thinking in the SPA (single page application) world, the route loaders primary. 
+
+And here we come to a big question. During all these years, more and more people went to a pure React approach, where external stores were seen as a bad pattern. The idea that state should just be in React and to handle that, use useReducer and Context API to manage state and useEffect to start fetching was spread out to the community.
+
+Of course, that came with all the problems we know of just living in the React re-render cycle and on the Context performance issues. There were people that defend the opposite, though, arguing that we should use more the power of external resources on React apps.
+
+Then, React came in RC19 and said: “We will rely on external promise start, with route loaders”. By the way, without a RFC (request for comments) or any type of public discussion. Without any warning or some blog post or talk explaining the benefits of the new approach, without any preparation.
+
+This is a case of being wrong and right at the same time: the arguments make sense, most of the time, but the reality is harder. There are a lot of apps relying on the fetch-on-render approach and other libraries and renders relying on the old behavior. Why not give to Suspense a prop to choose the mode, the old as default and the new one as option?
+
+But no, the discussion exploded and they, in the end, decided to delay the release and undo the change. This way we had the official release just in December of 2024 with the “old” (and current) behavior.
+
+## The learnings
+
+What can we take from this case? Not just the communication issues, but the pattern and architecture ones, in React.
+
+There is value in external resources in React, and we should take advantage of it. Route loaders are the obvious change, this pattern is not so popular yet, but we should go more for this pattern as this attacks one of the pain points of SPAs: the delay in first load on the fetching side, each milliseconds matter at this moment and loaders give some of them to us.
+
+But this applies to other parts as well, the server state cache is an example. Until today, there are apps relying on handling fetching with pure React primitives, not using and taking the benefits of server state caching solutions such as Tanstack Query and SWR, that removes the state from React, and handle it externally in a store, being able to share and reuse, independently if the component re-rendered, or if we change and got back to a page.
+
+Even though React went back with the Suspense change, we should understand what this discussion was, avoiding the fetch-on-render pattern is something we should stick to.
+
+
