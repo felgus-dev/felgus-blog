@@ -1,0 +1,146 @@
+---
+title: "The dynamics of event loop manipulation in JavaScript"
+publishedAt: "2025-04-03"
+summary: "Exploring the runtime internals"
+categories: "react,next.js,javascript"
+---
+
+Some of the libraries and frameworks made with javascript use some form of manipulation of event loop to make some of their features, these ones can look like magic, so let’s understand the dynamics of how this works.
+
+This post will not be an explanation of how event loop works and why it exists, we have great sources of this knowledge and I will leave some recommendations above. It’s required for you to know event loop concepts, so if you don’t, please read those contents.
+- [Video - JavaScript Visualized](https://www.youtube.com/watch?v=eiC58R16hb8)
+- [Doc - JavaScript execution model](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Execution_model)
+- [Talk - Jake Archibald on the web browser event loop](https://www.youtube.com/watch?v=cCOL7MC4Pl0)
+- [Post - Event loop: microtasks and macrotasks](https://javascript.info/event-loop)
+
+
+
+## Async
+
+The thing is all about it, in reality. For sync tasks you have a strict control using the language features such as loop, conditionals, function calls, etc, but for async, we enter a new world, where we explore new powers. But in practice it is all about queues.
+
+We can force a task to be async in javascript, that will add a task in one of the queues, microtask with higher priority and macrotask with lower priority, when call stack is empty, event loop puts the task queues to run.
+
+So, if you need something to be executed as soon as possible, the microtask queue is the place. If you want to give the event loop the opportunity to clean the queues, a macrotask is better, because all microtask queues will be executed first and then, the macrotask queue.
+
+The point is: create async tasks to execute things in the future, counting with the call stack work and event loop management. The order is strict, so you have a trustable way to keep consistency.
+
+## Valtio and how to batch with async
+
+Valtio wanted to have a nice feature, to batch updates without any new API, so no batch function necessarily to achieve it. Valtio is a state management library, so after the state update, it needs to notify the listeners that the state has changed. What if it is async?
+
+See this example, subscribing to a state and doing a console.log when it changes, what happens when you call the state change twice? In theory, running normally, 2 times. But we want automatic batching.
+
+```javascript
+import { proxy, subscribe } from 'valtio/vanilla';
+
+const state = proxy({ count: 0 });
+subscribe(state, () => {
+  console.log('count:', state.count);
+});
+
+state.count++;
+state.count++;
+```
+
+The point here is: the normal flow is to have the state notification as a sync task, but we can force it to be an async task. So, we will have this flow:
+- First state change.
+- Schedule async notification task (as microtask)
+- Second state change.
+- Try to schedule, but the async notification task is already scheduled.
+- All other sync code runs and it cleans the call stack.
+- The event loop starts to run tasks from the microtask queue.
+- Run the notification task.
+
+So now, you have two state changes, one notification. The callback passed to subscribe function will be called at this moment, so you just have one console.log. The batching will work to all state changes done as sync tasks or even as microtask, if it’s scheduled first as microtask.
+
+To schedule some async task, you can use:
+- [`promise.resolve().then()`:](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/then)
+- [`setTimeout(callback, 0)`:](https://developer.mozilla.org/en-US/docs/Web/API/Window/setTimeout) but there is a problem, we have a [4ms delay by default, so it’s normally not used for it.](https://developer.mozilla.org/en-US/docs/Web/API/Window/setTimeout#reasons_for_delays_longer_than_specified) 
+- [`queueMicrotask()`:](https://developer.mozilla.org/en-US/docs/Web/API/Window/queueMicrotask)
+- [`setImmediate()`:](https://nodejs.org/en/learn/asynchronous-work/understanding-setimmediate)
+
+In the case of Valtio, it uses `promise.resolve().then()` because it is more supported in older browsers, but nowadays, `queueMicrotask` is supported by most of the browsers available. Anyway, the idea is the same, the callback you pass to then will be in the microtask queue and will execute the listener when it goes to callstack.
+
+```typescript
+export function subscribe<T extends object>(
+  proxyObject: T,
+  callback: (unstable_ops: Op[]) => void,
+  notifyInSync?: boolean,
+): () => void {
+  const proxyState = proxyStateMap.get(proxyObject as object)
+  if (import.meta.env?.MODE !== 'production' && !proxyState) {
+    console.warn('Please use proxy object')
+  }
+  let promise: Promise<void> | undefined
+  const ops: Op[] = []
+  const addListener = (proxyState as ProxyState)[2]
+  let isListenerActive = false
+  const listener: Listener = (op) => {
+    ops.push(op)
+    if (notifyInSync) {
+      callback(ops.splice(0))
+      return
+    }
+    if (!promise) { // here it verifies if the promise exist, to skip the second+ updates
+      promise = Promise.resolve().then(() => {// here it calls schedule the microtask
+        promise = undefined
+        if (isListenerActive) {
+          callback(ops.splice(0))
+        }
+      })
+    }
+  }
+  const removeListener = addListener(listener)
+  isListenerActive = true
+  return () => {
+    isListenerActive = false
+    removeListener()
+  }
+}
+```
+
+## Next.js prerendering sync components
+
+Here the thing is the opposite. Next.js prerendering is a feature of generating static html for pages and loading them to the user as soon as possible, to improve web core metrics, giving to the user a UI with content faster.
+
+As on build time, we don’t have real user interaction data or even that the api call can work, it will be outdated when the user access, all async component, that will be wrapped in a `Suspense`, should just return the fallback component, normally a loading indicator such as spinners and skeleton.
+
+But, there is a thing. The static parts are sync, when it finds a fetch or other type of async work, it will go to the web API modules to handle their work and then, go to the microtasks queue.
+
+Then we have this solution:
+
+```javascript
+import { prerender } from "react-dom/server.edge";
+
+const controller = new AbortController();
+const { prelude, postponed } = new Promise((resolve, reject) => {
+  let result
+  setImmediate(() => {
+    try {
+      result = prerender(<App />, { signal: controller.signal })
+    } catch (err) {
+      reject(err)
+    }
+  })
+  setImmediate(() => {
+    controller.abort();
+    resolve(result)
+  })
+});
+```
+
+[`setImmediate`](https://nodejs.org/en/learn/asynchronous-work/understanding-setimmediate) is a node.js api that works similarly to `setTimeOut`, so it comes after it in queues order. It creates a promise, to allow the existence of resolve and it being handled even during different tasks on call stack.
+
+It doesn't use async await, so the return of prerender is a promise itself, when it’s sent as an argument to resolve, as a thenable object, the then will be “called” and the pre-rendered page will be sent.
+
+Another important part here is the existence of two `setImmediate`. As the order of `setImmediate` is basically to be the last one on the queues, if event loop needs to handle other async work during the schedule of these two tasks, it will not break the flow and it gives time to all sync work of prerender be executed and all async work be executed as well, even it’s not finished in reality, the point is to achieve the point of suspend, that is when a React component reaches a promise and returns the fallback with loading indication.
+
+Then, it comes to the second `setImmediate`, aborting the prerender work with [`AbortController`](https://developer.mozilla.org/en-US/docs/Web/API/AbortController). As prerender execution doesn't use async await, the return of prerender is a promise itself, when it’s sent as an argument to resolve, as a thenable object, the then will be “called” and the pre-rendered page will be sent.
+
+This way, just using the event loop, Next.js knows which part is async and skips that aborting and using the static fallback. In the past, they needed to do more compilation work to identify possible async components, all this is avoided with this solution.
+
+## Learnings:
+- Think about sync and async work and how you want to handle them.
+- You can force async work for later and you can choose the order of execution in the event loop.
+- You can know when async work started to be runned and skip them to just handle sync if you need it.
