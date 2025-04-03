@@ -29,7 +29,7 @@ The point is: create async tasks to execute things in the future, counting with 
 
 Valtio wanted to have a nice feature, to batch updates without any new API, so no batch function necessarily to achieve it. Valtio is a state management library, so after the state update, it needs to notify the listeners that the state has changed. What if it is async?
 
-See this example, subscribing to a state and doing a console.log when it changes, what happens when you call the state change twice? In theory, running normally, 2 times. But we want automatic batching.
+See this example, subscribing to a state and doing a `console.log` when it changes, what happens when you call the state change twice? In theory, running normally, you `console.log` 2 times. But we want automatic batching. To join all updates together and just do 1 `console.log`
 
 ```javascript
 import { proxy, subscribe } from 'valtio/vanilla';
@@ -41,6 +41,7 @@ subscribe(state, () => {
 
 state.count++;
 state.count++;
+// LOG = count: 2
 ```
 
 The point here is: the normal flow is to have the state notification as a sync task, but we can force it to be an async task. So, we will have this flow:
@@ -55,10 +56,10 @@ The point here is: the normal flow is to have the state notification as a sync t
 So now, you have two state changes, one notification. The callback passed to subscribe function will be called at this moment, so you just have one console.log. The batching will work to all state changes done as sync tasks or even as microtask, if it’s scheduled first as microtask.
 
 To schedule some async task, you can use:
-- [`promise.resolve().then()`:](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/then)
+- [`promise.resolve().then()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/then)
 - [`setTimeout(callback, 0)`:](https://developer.mozilla.org/en-US/docs/Web/API/Window/setTimeout) but there is a problem, we have a [4ms delay by default, so it’s normally not used for it.](https://developer.mozilla.org/en-US/docs/Web/API/Window/setTimeout#reasons_for_delays_longer_than_specified) 
-- [`queueMicrotask()`:](https://developer.mozilla.org/en-US/docs/Web/API/Window/queueMicrotask)
-- [`setImmediate()`:](https://nodejs.org/en/learn/asynchronous-work/understanding-setimmediate)
+- [`queueMicrotask()`](https://developer.mozilla.org/en-US/docs/Web/API/Window/queueMicrotask)
+- [`setImmediate()`](https://nodejs.org/en/learn/asynchronous-work/understanding-setimmediate)
 
 In the case of Valtio, it uses `promise.resolve().then()` because it is more supported in older browsers, but nowadays, `queueMicrotask` is supported by most of the browsers available. Anyway, the idea is the same, the callback you pass to then will be in the microtask queue and will execute the listener when it goes to callstack.
 
@@ -82,8 +83,10 @@ export function subscribe<T extends object>(
       callback(ops.splice(0))
       return
     }
-    if (!promise) { // here it verifies if the promise exist, to skip the second+ updates
-      promise = Promise.resolve().then(() => {// here it calls schedule the microtask
+    // here it verifies if the promise exist, to skip the second+ updates
+    if (!promise) { 
+      // here it calls schedule the microtask
+      promise = Promise.resolve().then(() => {
         promise = undefined
         if (isListenerActive) {
           callback(ops.splice(0))
@@ -131,8 +134,6 @@ const { prelude, postponed } = new Promise((resolve, reject) => {
 ```
 
 [`setImmediate`](https://nodejs.org/en/learn/asynchronous-work/understanding-setimmediate) is a node.js api that works similarly to `setTimeOut`, so it comes after it in queues order. It creates a promise, to allow the existence of resolve and it being handled even during different tasks on call stack.
-
-It doesn't use async await, so the return of prerender is a promise itself, when it’s sent as an argument to resolve, as a thenable object, the then will be “called” and the pre-rendered page will be sent.
 
 Another important part here is the existence of two `setImmediate`. As the order of `setImmediate` is basically to be the last one on the queues, if event loop needs to handle other async work during the schedule of these two tasks, it will not break the flow and it gives time to all sync work of prerender be executed and all async work be executed as well, even it’s not finished in reality, the point is to achieve the point of suspend, that is when a React component reaches a promise and returns the fallback with loading indication.
 
