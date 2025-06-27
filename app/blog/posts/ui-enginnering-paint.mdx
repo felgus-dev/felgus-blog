@@ -1,0 +1,77 @@
+---
+title: "UI Engineering: It's all pixels"
+publishedAt: "2025-06-27"
+summary: "The paint process"
+categories: "javascript"
+serie: "ui-engineering"
+---
+
+Yes, the digital UI we created is just a bunch of pixels painted on the screen. The user sees that information and processes it, doing interactions by touch screen, mouse, keyboards, voice, whatever.
+
+But how are these pixels painted?
+
+## Rendering
+
+But before the painting process, we need to specify what needs to be painted.
+
+The process varies, of course. In the web, we can split it in three big phases:
+defining the structure of the base elements which need to be rendered.
+merging the styles applied to the base element, creating a layout with forms and sizes defined.
+process the painting in GPU, taking the layout definition and making the OS to really paint the pixels on screen.
+
+The process varies from browser to browser, and in native platforms, are different, of course. At this moment we will not deep dive into the process ([but here are some examples of how it works internally](https://www.youtube.com/watch?v=PzzNuCk-e0Y)), the idea is to focus on the main phases only.
+
+## Base elements
+
+We have the small unit of work of UIs, its base elements. For the web we have the HTML elements, which give us the base to modify, to it we attach our styling properties that will be merged to generate what we need to render.
+
+Declarative paradigm plays an important role here: we specify which elements we need, but it is the work from the platform to really render it. Even in tools like React, where the tool uses the platform API to specify what needs to be rendered, we describe our template, and the tool, React, plays this middle role of transforming our declarative code into imperative one, calling the APIs to create the element. But even this way, the platform does the rendering.
+
+But now we need to take another huge step. We are not creating random UIs, normally there are designers working in drawing that experience, using the UI elements that they created, visually, to connect the user to the flows.
+
+There are complex UI elements that are not in the base of the platform. At the same time, even the basic ones are different sometimes, we need to adapt that to the designer's vision, the best way we can.
+
+But, in terms of visual communication, for the user, there are the UI elements, and the users don’t care if the platform works differently in the default version.
+
+We need to connect these two worlds, the world of visual communication of UI/UX, to the world of rendered elements at the platform, our frontend world lives between these two, as a bridge.
+
+That’s why components make much sense, when thinking and building UIs. We create a new abstraction layer where we merge design, platform elements, logic and behavior. We can have complex components with great and deep behavior and visuals, but, in the end, our structure finished delivering the base platform elements that will really be rendered, with our modifications.
+
+## Platform UI
+
+Which base elements the platform has and its default styles and behavior are an inherent part of what a platform is. The evolution of the platform and what is available is the way the platform expresses what type of communication it will have with the developers and users.
+
+We saw it in the web, with the delayed evolution, that needs to fit agreements in numerous meetings, or in the native platforms such as iOS and Android, where the owners do their changes faster, but behind its proprietary structure.
+
+Liquid Glass and Material 3, the latest UI design solutions they brought, will make everybody using the platform to adapt themselves, to adjust their products to the new visuais and ideas, on how to better use the resources available.
+
+So, frontend lives in this interconnection of relationships. From backend with their APIs and JSONs, to the product managers and their decisions, to designers and their UI and UX work to fit the necessities of the product with their context and the frontender, that connects all this with the platform, where we connect with the final users.
+
+## Layout
+So, now we have the common base, we have the design and we wrote the code to make that work together, so what needs to be done?
+
+The platform will need to understand all of it, specially the combinations of structure and visual. That is what will be rendered, but for the pixel world, some specific calculations need to be done.
+
+If we say that the size of something is 100%, what does this mean? In CSS for example, we have rem, em, calc and other dynamic calculations that need to become specific values. The size 100% needs to become 1280px, and that number will be used to really paint the UI.
+
+At this moment, we really create the layout, what is the page and its positions, absolute sizes, colors, and other visual properties. With it, we know what needs to be painted, so let's paint it.
+
+## Paint
+
+We can think of the flow of a screen as a movie. You probably saw in your life animations made in a bunch of paper, where they draw the different pages and pass all very fast.
+
+The reality is, in each second, we saw a lot of frames that together seemed like a fluid and animated UI. But, if we see it, it means it needs to be created. So all these steps of setting the changes, preparing the structures, using the platform APIs to it, connecting with the Operating System, graphics modules and in the end, having the pixels with the correct colors and positions on the screen needs to be made dozens of times, in a second.
+
+The default of the industry today is approximately 60 frames per second, but there are computers and cell phones that support even more. The more frames you have per second, the more painting work the device and operating system will need to handle.
+
+Talking about common UIs, 60 frames per second is a good goal. It means we have 16.667 milliseconds to generate each frame, and the platform knows it.
+
+And there is a common computational problem in it. Read and write. Everytime you apply changes to the UI, the render flow will happen, making all the work. But, in a chaotic environment, where you write changes, and then need to read to apply new changes, you create unnecessary runs of the render cycle.
+
+Imagine a READ between two other WRITE, you have an entire wasted render flow, that coasts important milliseconds, or even a frame. To split the WRITE and READS is a common pattern in UI engineering. 
+
+You apply all the READ values first, getting all the specific values, and then you apply all the WRITES in sequence, to batch all these changes in a single render cycle. This way you get more changes being applied at the same time, which requires more strength from the devices, but has a strongly better performance, especially compared to a de-optimized version of it.
+
+## Journey
+
+This is just the beginning of this series of posts, we have much more things to say about UI engineering, stay tuned.
