@@ -1,0 +1,83 @@
+---
+title: "The present and the future of SPAs in React"
+publishedAt: "2025-07-22"
+summary: "Single page applications for the win"
+categories: "react"
+---
+
+Recently we have seen a lot of discussions about server rendering in the React ecosystem, especially related to server components and Next.js. But, what about the future of classic SPAs?
+
+I’m talking about simple static files and one html being loaded, and then, rendering the application, I’ll talk about the current patterns that bring value, and the possible new things that will take place in a, I hope soon, future.
+
+## Current patterns
+One pattern that appeared on the SPA side some years ago, and still is not so widespread, is the [render-as-you-fetch](https://www.felgus.dev/blog/suspense-gate) one.
+
+Years ago, the common way was to do the fetches inside the components. So you had this workflow:
+- request the HTML
+- paint in the UI the initial html
+- download the JS files
+- parsing and executing then, initializing React
+- starting to render the React tree
+- start fetch inside of components
+- painting suspense fallback while fetching
+- after fetch, update to real component UI
+
+So you had the fetch been executed with the render, the fetch-on-render pattern. That was simpler, but caused waterfalls and a delayed render of the UI, I don’t have the numbers, but most part of SPAs still follow this pattern, let’s see the difference comparing with render-as-you-fech:
+- request the HTML
+- paint in the UI the initial html
+- download the JS files
+- parsing and executing then, initializing React
+- starting to render React tree, **CALLING THE ROUTE LOADERS**
+- painting suspense fallback while pending fetch
+- after fetch, update to real component UI.
+
+We save one step and start to fetch the route loader function earlier, this brings important milliseconds. We paint the suspense fallback sooner, improving UX, and finalizes the fetch faster, going to the usable UI sooner as well.
+
+We can do it today with React Router v7 and Tanstack Router, mainly. And it’s important to remember the Suspense Gate last year, and all the polemic around these two patterns, where is the vision of the future to React, to use the render-as-you-fetch pattern as default.
+
+## Server components
+Wait, we are talking about SPAs, right? So, servers??  
+
+The naming is not good, but we can generate React Server Components even without a server, we can generate it in a build step, for example, and let the RSC Payload ready to be used in a classic SPA.
+
+We still don’t have this pattern clear, most of the frameworks are focusing on the backend side of RSC, so generating them in a real server is the common approach now. But, what if we could set “static components” that we know that don’t count within session data and interactions, the type of components that can be generated before the publishing of the app, and then, loaded by demand and used inside of a classic SPA?
+
+## Concurrent patterns
+In React 18 it released concurrent features: [useTransition](https://react.dev/reference/react/useTransition) and [useDeferred](https://react.dev/reference/react/useDeferredValue). Some people were very fast to do the analysis that these features are focused in “scaled and complex applications” that was not the average type of React applications.
+
+These analyses are wrong, so are most of the arguments about complexity in frontend. We are building UIs, so each individual user is a world of their own. When we talk about scale in frontend, we talk about the amount of pages, interactions and information that will flow through the UI. Not by the number of users, necessarily.
+
+Each interaction counts and each one of them can happen in a random order, at any moment. But, React, using javascript, just uses one main thread to do the work. You don’t know if the app will have conflicting priorities during a user interaction, you don’t know which parts of the UI has a higher priority in updates, when concurrent interactions are happening at the same time, the user doesn't know it as well, and it’s just using the app normally.
+
+But if you use React concurrent features, you can set the priorities, and let React take care of the rest. With concurrent features you can set the lower priorities to some updates in some parts of the UI.
+
+This way, React knows which work to focus first and which ones you want them to delay a little, that makes a strong difference, having as result a more fluid interface, without dropping frames and keeping a good UX.
+
+Talking about UX, it’s important as a React dev, to inform and explain to the designers the capabilities of concurrent features, that will be a new tool in their tool set that they can use whatever type of interaction they pretend to build.
+
+## Preload
+
+But then, the user flow uses more than one page, sometimes. How to improve it?
+
+All routers have a Link component, wrapping the a tag from html and connecting it with the work of the router, instead of having the default behavior of the browser, refreshing the page, the SPA skips the refresh and manually updates the UI with the new page code.
+
+There is the common strategy of code splitting and lazy loading. Instead of having all the SPA code in one big file, you have the main one, that will be loaded all the times first, but for other pages, you can have a separate JS file with the code specific for that page.
+
+When the user needs to go to a new page, the JS file for that page is downloaded, parsed and executed, on demand. That, of course, makes the main file to have a minor size, which improves the first load and other web core vitals scores.
+
+But, if the router or framework handles the Link component, why not use it to preload stuff, dynamically. We can know when the user is hovering the Link component, and after some specific time, start the loading of [Route Loaders, fetching the data for that component](https://tanstack.com/router/v1/docs/framework/react/guide/data-loading). This milliseconds of improvement will make the UI be painted first with the content.
+
+And talking about rendering faster…
+
+## React Labs
+They released a blog post sometime ago, talking about innovations they are building. There are 2 that called my attention: [ViewTransition and Activity](https://react.dev/blog/2025/04/23/react-labs-view-transitions-activity-and-more).
+
+View Transition is a new web standard that has been integrated into React, the component itself connects the API with React model and solves some quirks. That will be very useful for page transitions with animations, creating a more fluid experience.
+
+But the one I think is more important here is Activity. It’s not something new, React already had the Offscreen component that was used inside of Suspense. The idea is: in React, the rendering (calling the component to get the UI definition) and committing (really applying the changes to the UI).
+
+So, to have a way of pre-rendering a component without affecting the UI is very useful. The core team of React talks about this idea for a long time. But now, it’s coming to reality. So, with the Activity component you can get a first Ui definition a component can have, and save it for a future use. 
+
+When necessary, you can get that definition and use it in the first commit with the new changes. That avoids the rendering in this moment, saving important milliseconds, which can create a more interactive experience, updating the UI faster.
+
+Sum this with the preload I wrote about in the topic above and you can preload the route, start route loaders in a specific flow, making the update to the new page without the delay of the common experience we have today. Depending on the ViewTransition integration we can have there, the experience becomes native like.
