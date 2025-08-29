@@ -5,7 +5,7 @@ import { GeistMono } from "geist/font/mono";
 import { Navbar } from "./components/nav";
 import Footer from "./components/footer";
 import { baseUrl } from "./sitemap";
-import PlausibleProvider from 'next-plausible'
+import PlausibleProvider from "next-plausible";
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   alternates: {
     canonical: baseUrl,
     types: {
-      'application/rss+xml': `${baseUrl}/rss`,
+      "application/rss+xml": `${baseUrl}/rss`,
     },
   },
 };
@@ -53,7 +53,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={cx(GeistSans.variable, GeistMono.variable)}>
       <PlausibleProvider domain="felgus.dev">
-        <body className="antialiased max-w-xl mx-4 mt-8 lg:mx-auto">
+        <body className="antialiased max-w-2xl mx-4 mt-8 lg:mx-auto">
           <main className="flex-auto min-w-0 mt-6 flex flex-col px-2 md:px-0">
             <Navbar />
             {children}
