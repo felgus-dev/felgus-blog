@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from "next/link";
 type Props = {
   href: string;
   children: React.ReactNode;
@@ -7,17 +7,12 @@ type Props = {
 export const MyLink = (props: Props) => {
   return (
     <Link
-      style={{ 
-        textDecoration: 'underline',
-        textDecorationColor: '#FF5733',
-        textDecorationThickness: '1.6px',
-        textUnderlineOffset: '2px',
-        fontWeight: 'bold'
-      }}
       href={props.href}
-      target="_blank" rel="noopener noreferrer"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="font-bold decoration-solid decoration-[1.6px] underline decoration-red-700 underline-offset-2 hover:decoration-yellow-300 transition-all"
     >
       {props.children}
     </Link>
   );
-}
+};
